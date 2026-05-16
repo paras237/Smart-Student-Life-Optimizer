@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+{% block title %}Attendance — Smart Student Optimizer{% endblock %}
+{% block header %}Attendance Management{% endblock %}
+{% block subheader %}Subject-wise tracking, safe bunk calculator, and OCR scanner{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 fade-in-up delay-1">
+        <div class="stat-card green">
+            <div class="stat-icon green"><i class="fas fa-percent"></i></div>
+            <div class="stat-label">Overall Attendance</div>
+            <div class="stat-value green" id="overallPct">--%</div>
+            <span class="stat-badge flat" id="overallBadge">Calculating...</span>
+            <div class="progress-slim"><div class="bar" id="overallBar" style="width:0%;background:var(--success);"></div></div>
+        </div>
+    </div>
+    <div class="col-md-3 fade-in-up delay-2">
+        <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="fas fa-calendar-xmark"></i></div>
+            <div class="stat-label">Total Classes</div>
+            <div class="stat-value blue" id="kpiTotal">--</div>
+            <span class="stat-badge flat" id="kpiAttended">Attended: --</span>
+        </div>
+    </div>
+    <div class="col-md-3 fade-in-up delay-3">
+        <div class="stat-card yellow">
+            <div class="stat-icon yellow"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="stat-label">At-Risk Subjects</div>
+            <div class="stat-value yellow" id="kpiAtRisk">--</div>
+            <span class="stat-badge flat" id="kpiAtRiskNames" style="font-size:0.7rem;">below 75%</span>
+        </div>
+    </div>
+    <div class="col-md-3 fade-in-up delay-4">
+        <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="fas fa-bed"></i></div>
+            <div class="stat-label">Total Safe Bunks</div>
+            <div class="stat-value blue" id="kpiTotalBunks">--</div>
+            <span class="stat-badge flat">across all subjects</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Subject Table -->
+    <div class="col-xl-8 fade-in-up delay-2">
+        <div class="card-glass p-4">
+            <div class="section-header mb-3">
+                <div>
+                    <div class="section-title">Subject-Wise Breakdown</div>
+                    <div class="section-sub">Edit Attended / Total to recalculate live</div>
+                </div>
+                <button class="btn-primary-custom" id="calcBtn" style="font-size:0.8rem;padding:8px 16px;">
+                    <i class="fas fa-calculator"></i> Recalculate
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table style="width:100%;border-collapse:separate;border-spacing:0 5px;">
+                    <thead>
+                        <tr style="font-size:0.68rem;text-transform:uppercase;color:var(--text-muted);letter-spacing:.06em;">
+                            <th style="padding:0 10px 8px;text-align:left;">Subject</th>
+                            <th style="padding:0 6px 8px;text-align:center;width:60px;">Att</th>
+                            <th style="padding:0 6px 8px;text-align:center;width:60px;">Total</th>
+                            <th style="padding:0 6px 8px;text-align:center;width:72px;">%</th>
+                            <th style="padding:0 6px 8px;text-align:center;width:95px;" title="Safe classes you can skip and stay ≥75%">🎯 Bunks</th>
+                            <th style="padding:0 8px 8px;text-align:center;width:70px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-xl-4">
+        <!-- Bunk Calculator -->
+        <div class="card-glass p-4 mb-3 fade-in-up delay-3">
+            <div class="section-header mb-3">
+                <div>
+                    <div class="section-title">Bunk Calculator</div>
+                    <div class="section-sub">Min 75% required</div>
+                </div>
+                <span class="pill blue">Per Subject</span>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label class="form-label-custom">Attended</label>
+                    <input type="number" class="form-control form-control-dark" id="bunkAttended" value="239" min="0">
+                </div>
+                <div class="col-6">
+                    <label class="form-label-custom">Total Classes</label>
+                    <input type="number" class="form-control form-control-dark" id="bunkTotal" value="277" min="0">
+                </div>
+            </div>
+            <button class="btn-primary-custom w-100" onclick="calcBunks()" style="justify-content:center;">
+                <i class="fas fa-calculator"></i> Calculate Safe Bunks
+            </button>
+            <div id="bunkResult" class="mt-3 d-none">
+                <div class="p-3 rounded-3" style="background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.15);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon blue" style="width:44px;height:44px;font-size:1.1rem;" id="bunkIcon"><i class="fas fa-thumbs-up"></i></div>
+                        <div>
+                            <div class="fs-11 text-muted-custom text-uppercase fw-600">You can safely miss</div>
+                            <div id="bunkCount" style="font-size:1.5rem;font-weight:800;color:var(--accent);">--</div>
+                        </div>
+                    </div>
+                    <div id="bunkMsg" class="mt-2 fs-13 text-sub"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OCR Scanner -->
+        <div class="card-glass p-4 fade-in-up delay-4">
+            <div class="section-header mb-3">
+                <div>
+                    <div class="section-title">ERP OCR Scanner</div>
+                    <div class="section-sub">Upload 1+ screenshots — auto-stitched</div>
+                </div>
+                <span class="pill blue"><i class="fas fa-robot me-1"></i>AI</span>
+            </div>
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('erpImage').click()">
+                <i class="fas fa-images mb-2" id="uploadIcon" style="font-size:2rem;color:var(--accent);"></i>
+                <p class="mb-1" id="uploadText" style="font-size:0.88rem;font-weight:600;">Click to Select ERP Screenshots</p>
+                <p class="mb-0 fs-11 text-muted-custom">Select <strong>multiple</strong> if subjects don't fit in one screen</p>
+                <input type="file" id="erpImage" accept="image/*" multiple class="d-none">
+            </div>
+            <div id="previewStrip" class="d-none mt-3">
+                <div class="fs-11 text-muted-custom fw-600 mb-2">
+                    <i class="fas fa-layer-group me-1"></i>
+                    <span id="previewCount">0</span> screenshot(s) — will be stitched top→bottom
+                </div>
+                <div id="previewThumbs" class="d-flex gap-2 flex-wrap"></div>
+            </div>
+            <button class="btn-success-custom w-100 mt-3" id="scanBtn" onclick="runOCR()" style="justify-content:center;">
+                <i class="fas fa-magnifying-glass"></i> Extract Attendance
+            </button>
+            <div id="ocrResult" class="mt-3 d-none">
+                <div id="ocrBanner" class="p-3 rounded-3 mb-3 d-none"></div>
+                <div class="fs-11 text-muted-custom text-uppercase fw-600 mb-2">Extracted Per-Subject</div>
+                <div id="ocrSubjectCards" class="mb-3"></div>
+                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                     style="background:rgba(56,189,248,0.07);border:1px solid rgba(56,189,248,0.15);">
+                    <span style="font-size:0.85rem;font-weight:600;">Overall (OCR)</span>
+                    <span id="ocrOverall" style="font-size:1.5rem;font-weight:800;color:var(--accent);">--%</span>
+                </div>
+                <details class="mt-2">
+                    <summary class="fs-11 text-muted-custom" style="cursor:pointer;">Show Raw OCR Text</summary>
+                    <div class="mt-2 p-2 rounded-3" style="background:rgba(0,0,0,.3);font-family:monospace;font-size:.72rem;color:var(--success);max-height:100px;overflow-y:auto;" id="ocrRawText"></div>
+                </details>
+            </div>
+        </div>
+    </div><!-- /col-xl-4 -->
+</div><!-- /row -->
+
+<style>
+.att-row {
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    transition: background .18s, box-shadow .18s;
+    position: relative;
+}
+.att-row:hover { background: rgba(255,255,255,0.06); box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+.att-row td { padding: 9px 8px; vertical-align: middle; }
+.att-row td:first-child { border-radius: 10px 0 0 10px; padding-left: 0; }
+.att-row td:last-child  { border-radius: 0 10px 10px 0; }
+.att-row-bar { width: 4px; border-radius: 10px; align-self:stretch; flex-shrink:0; }
+.att-inp {
+    width: 58px;
+    padding: 5px 6px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: .83rem;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    transition: border-color .2s, background .2s;
+}
+.att-inp:focus { border-color: var(--accent); background: rgba(56,189,248,.06); }
+.pct-bar { height: 4px; border-radius: 99px; background: rgba(255,255,255,0.07); margin-top:4px; }
+.pct-bar-fill { height: 100%; border-radius: 99px; transition: width .8s ease; }
+</style>
+
+<script>
+// ── Icon / Color maps ──
+const iconMap = {
+    'E1PY201B':'fa-coffee',    'E1PY203B':'fa-sitemap',     'E1PY206T':'fa-network-wired',
+    'E1PY207T':'fa-server',    '01PA202L':'fa-calculator',  'E1PY210B':'fa-robot',
+    'E1PY213T':'fa-microchip', 'E1PY217T':'fa-wifi',        'E1PY218L':'fa-briefcase',
+    'EPY2038':'fa-robot',      'EPY2137T':'fa-chart-pie',   'EPY2207T':'fa-network-wired',
+    'CIPA2021':'fa-cloud',     'EPY2051':'fa-brain',        'EPY2108':'fa-eye',
+};
+const colorMap = {
+    'E1PY201B':'accent',  'E1PY203B':'purple',  'E1PY206T':'success',
+    'E1PY207T':'blue',    '01PA202L':'warning',  'E1PY210B':'accent',
+    'E1PY213T':'purple',  'E1PY217T':'success',  'E1PY218L':'warning',
+    'EPY2038':'accent',   'EPY2137T':'purple',   'EPY2207T':'success',
+    'CIPA2021':'warning', 'EPY2051':'danger',    'EPY2108':'blue',
+};
+
+// ── Subjects (mutable — updated by OCR) ──
+let subjects = [
+    { code:'E1PY201B', name:'OOP with Java',         type:'PP', icon:'fa-coffee',        color:'accent',  attended:13, total:21 },
+    { code:'E1PY201B', name:'OOP with Java',         type:'PR', icon:'fa-coffee',        color:'accent',  attended:11, total:18 },
+    { code:'E1PY203B', name:'Data Structures',       type:'PP', icon:'fa-sitemap',       color:'purple',  attended:25, total:31 },
+    { code:'E1PY203B', name:'Data Structures',       type:'PR', icon:'fa-sitemap',       color:'purple',  attended:14, total:22 },
+    { code:'E1PY206T', name:'DCN',                   type:'PP', icon:'fa-network-wired', color:'success', attended:14, total:18 },
+    { code:'E1PY207T', name:'Operating Systems',     type:'PP', icon:'fa-server',        color:'blue',    attended:22, total:26 },
+    { code:'01PA202L', name:'VQR',                   type:'PR', icon:'fa-calculator',    color:'warning', attended:35, total:40 },
+    { code:'E1PY210B', name:'ML with Python',        type:'PP', icon:'fa-robot',         color:'accent',  attended:12, total:18 },
+    { code:'E1PY210B', name:'ML with Python',        type:'PR', icon:'fa-robot',         color:'accent',  attended:14, total:18 },
+    { code:'E1PY213T', name:'AI Generative AI',      type:'PP', icon:'fa-microchip',     color:'purple',  attended:21, total:28 },
+    { code:'E1PY217T', name:'Internet of Things',    type:'PP', icon:'fa-wifi',          color:'success', attended:18, total:28 },
+    { code:'E1PY218L', name:'Training-I',            type:'PR', icon:'fa-briefcase',     color:'warning', attended:10, total:12 },
+];
+
+const ATTENDANCE_KEY = 'smartStudent.latestAttendance';
+try {
+    const savedAttendance = JSON.parse(localStorage.getItem(ATTENDANCE_KEY) || 'null');
+    if (savedAttendance && Array.isArray(savedAttendance.subjects) && savedAttendance.subjects.length) {
+        subjects = savedAttendance.subjects.map(s => ({
+            code: s.code,
+            name: s.name || s.code,
+            type: s.type || 'PP',
+            icon: iconMap[s.code] || s.icon || 'fa-book',
+            color: colorMap[s.code] || s.color || 'blue',
+            attended: Number(s.attended) || 0,
+            total: Number(s.total) || 0
+        }));
+    }
+} catch (e) {}
+
+function saveAttendanceState() {
+    const cleanSubjects = subjects.map(s => ({
+        code: s.code,
+        name: s.name,
+        type: s.type,
+        attended: Number(s.attended) || 0,
+        total: Number(s.total) || 0
+    }));
+    const totalAtt = cleanSubjects.reduce((sum, s) => sum + s.attended, 0);
+    const totalCls = cleanSubjects.reduce((sum, s) => sum + s.total, 0);
+    localStorage.setItem(ATTENDANCE_KEY, JSON.stringify({
+        updatedAt: new Date().toISOString(),
+        overall: totalCls > 0 ? Math.round((totalAtt / totalCls) * 1000) / 10 : 0,
+        subjects: cleanSubjects
+    }));
+}
+
+function pctColor(p){ return p>=85?'var(--success)': p>=75?'var(--warning)':'var(--danger)'; }
+function statusLabel(p){ return p>=85?'Safe': p>=75?'OK':'At Risk'; }
+function statusPill(p){ return p>=85?'green': p>=75?'yellow':'red'; }
+
+function renderTable() {
+    const tbody = document.getElementById('attendanceTbody');
+    let totalAtt=0, totalCls=0, atRisk=0, safe=0, atRiskNames=[], totalSafeBunks=0;
+
+    tbody.innerHTML = subjects.map((s,i) => {
+        const att = s.attended, tot = s.total;
+        const pct = tot>0 ? Math.round(att/tot*100) : 0;
+        totalAtt+=att; totalCls+=tot;
+
+        // ── Per-subject safe bunk calculation ──
+        const safeBunks = tot>0 ? Math.floor((att - 0.75*tot) / 0.75) : 0;
+        const needMore  = tot>0 ? Math.ceil(0.75*tot - att) : 0;
+        const canBunk   = safeBunks > 0;
+        totalSafeBunks += canBunk ? safeBunks : 0;
+
+        if(pct<75){ atRisk++; atRiskNames.push(s.code); } else safe++;
+
+        const barColor = pct>=75?'var(--success)':'var(--danger)';
+        const typeTag = `<span style="font-size:.65rem;padding:2px 5px;border-radius:4px;background:${s.type==='PR'?'rgba(250,204,21,.12)':'rgba(56,189,248,.12)'};color:${s.type==='PR'?'var(--warning)':'var(--accent)'};">${s.type}</span>`;
+
+        // Bunk cell HTML
+        let bunkCell;
+        if(canBunk){
+            bunkCell = `<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:4px 10px;">
+                <i class="fas fa-check" style="color:var(--success);font-size:.65rem;"></i>
+                <span style="color:var(--success);font-weight:700;font-size:.88rem;">${safeBunks}</span>
+                <span style="color:var(--text-muted);font-size:.65rem;">left</span>
+            </div>`;
+        } else if(pct===75){
+            bunkCell = `<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.2);border-radius:8px;padding:4px 8px;">
+                <i class="fas fa-lock" style="color:var(--warning);font-size:.65rem;"></i>
+                <span style="color:var(--warning);font-weight:700;font-size:.8rem;">0</span>
+                <span style="color:var(--text-muted);font-size:.65rem;">locked</span>
+            </div>`;
+        } else {
+            bunkCell = `<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:4px 8px;">
+                <i class="fas fa-arrow-up" style="color:var(--danger);font-size:.65rem;"></i>
+                <span style="color:var(--danger);font-weight:700;font-size:.8rem;">+${needMore}</span>
+                <span style="color:var(--text-muted);font-size:.65rem;">needed</span>
+            </div>`;
+        }
+
+        const colorHex = {'accent':'#38bdf8','purple':'#a78bfa','success':'#34d399','blue':'#60a5fa','warning':'#fbbf24','danger':'#f87171','green':'#4ade80','yellow':'#facc15'};
+        const subColor = colorHex[s.color] || '#38bdf8';
+
+        return `<tr class="att-row">
+            <td style="white-space:nowrap;padding-left:0;">
+                <div class="d-flex align-items-center gap-0">
+                    <div style="width:4px;min-height:46px;border-radius:4px;background:${subColor};margin-right:10px;flex-shrink:0;"></div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width:28px;height:28px;border-radius:7px;background:${subColor}18;display:grid;place-items:center;flex-shrink:0;">
+                            <i class="fas ${s.icon}" style="color:${subColor};font-size:.7rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:.8rem;font-weight:700;color:var(--text-primary);">${s.name} ${typeTag}</div>
+                            <div style="font-size:.65rem;color:var(--text-muted);">${s.code}</div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td style="text-align:center;">
+                <input class="att-inp" type="number" value="${att}" min="0" onchange="updateRow(${i},'att',this.value)">
+            </td>
+            <td style="text-align:center;">
+                <input class="att-inp" type="number" value="${tot}" min="0" onchange="updateRow(${i},'tot',this.value)">
+            </td>
+            <td style="text-align:center;">
+                <div style="font-weight:800;font-size:.9rem;color:${pctColor(pct)};">${pct}%</div>
+                <div class="pct-bar"><div class="pct-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor};"></div></div>
+            </td>
+            <td style="text-align:center;">${bunkCell}</td>
+            <td style="text-align:center;">
+                <span class="pill ${statusPill(pct)}" style="font-size:.68rem;">${statusLabel(pct)}</span>
+            </td>
+        </tr>`;
+    }).join('');
+
+    // Update KPIs
+    const overall = totalCls>0 ? (totalAtt/totalCls*100).toFixed(1) : 0;
+    document.getElementById('overallPct').innerText = overall+'%';
+    document.getElementById('overallBar').style.width = Math.min(overall,100)+'%';
+    document.getElementById('overallBadge').innerText = overall>=75 ? 'Above 75% ✓' : 'Below 75% ✗';
+    document.getElementById('overallBar').style.background = overall>=75?'var(--success)':'var(--danger)';
+    document.getElementById('kpiTotal').innerText = totalCls;
+    document.getElementById('kpiAttended').innerText = 'Attended: '+totalAtt;
+    document.getElementById('kpiAtRisk').innerText = atRisk;
+    document.getElementById('kpiAtRiskNames').innerText = atRisk>0 ? atRiskNames.slice(0,2).join(', ')+(atRisk>2?` +${atRisk-2} more`:'') : 'All safe ✓';
+    const kpiSafeEl = document.getElementById('kpiSafe');
+    if(kpiSafeEl) kpiSafeEl.innerText = safe;
+    const bkpi = document.getElementById('kpiTotalBunks');
+    if(bkpi) bkpi.innerText = totalSafeBunks;
+    saveAttendanceState();
+}
+
+
+function updateRow(i, field, val) {
+    subjects[i][field==='att'?'attended':'total'] = parseInt(val)||0;
+    renderTable();
+}
+
+document.getElementById('calcBtn').addEventListener('click', renderTable);
+renderTable();
+
+// ── Bunk Calculator ──
+function calcBunks() {
+    const att=parseInt(document.getElementById('bunkAttended').value)||0;
+    const tot=parseInt(document.getElementById('bunkTotal').value)||0;
+    if(!tot) return;
+    const safe=Math.floor((att-0.75*tot)/0.75);
+    const div=document.getElementById('bunkResult');
+    div.classList.remove('d-none');
+    const icon=document.getElementById('bunkIcon');
+    const msg=document.getElementById('bunkMsg');
+    if(safe>0){
+        document.getElementById('bunkCount').innerText=safe+' class'+(safe>1?'es':'');
+        msg.innerText=`Current: ${(att/tot*100).toFixed(1)}%. Miss ${safe} class(es) and still stay at 75%.`;
+        icon.innerHTML='<i class="fas fa-thumbs-up"></i>';
+        icon.style.background='rgba(34,197,94,.15)';
+    } else {
+        const needed=Math.ceil(0.75*tot-att);
+        document.getElementById('bunkCount').innerText='0 classes';
+        msg.innerText=`Attend ${needed} more class(es) to reach 75%. Do NOT miss any!`;
+        icon.innerHTML='<i class="fas fa-thumbs-down"></i>';
+        icon.style.background='rgba(239,68,68,.15)';
+    }
+}
+
+// ── OCR: Removable file list ──
+let selectedFiles = [];
+
+function renderThumbs() {
+    const thumbs = document.getElementById('previewThumbs');
+    const strip  = document.getElementById('previewStrip');
+    const uploadText = document.getElementById('uploadText');
+    const uploadIcon = document.getElementById('uploadIcon');
+
+    if (!selectedFiles.length) {
+        strip.classList.add('d-none');
+        uploadText.innerText = 'Click to Select ERP Screenshots';
+        uploadIcon.className = 'fas fa-images mb-2';
+        uploadIcon.style.color = 'var(--accent)';
+        return;
+    }
+
+    strip.classList.remove('d-none');
+    document.getElementById('previewCount').innerText = selectedFiles.length;
+    uploadText.innerText = selectedFiles.length + ' screenshot' + (selectedFiles.length > 1 ? 's' : '') + ' selected';
+    uploadIcon.className = 'fas fa-check-circle mb-2';
+    uploadIcon.style.color = 'var(--success)';
+
+    thumbs.innerHTML = '';
+    selectedFiles.forEach((f, i) => {
+        const r = new FileReader();
+        r.onload = e => {
+            const w = document.createElement('div');
+            w.style.cssText = 'position:relative;display:inline-block;margin-right:6px;margin-bottom:6px;';
+            w.innerHTML = `
+                <img src="${e.target.result}"
+                     style="height:72px;border-radius:7px;border:2px solid rgba(56,189,248,.3);display:block;">
+                <!-- order badge -->
+                <div style="position:absolute;top:-5px;left:-5px;width:18px;height:18px;background:var(--accent);border-radius:50%;display:grid;place-items:center;font-size:.6rem;font-weight:800;color:#0A0F1E;pointer-events:none;">${i+1}</div>
+                <!-- ✕ remove button -->
+                <button onclick="removeFile(${i})"
+                    title="Remove this screenshot"
+                    style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;background:#ef4444;border:none;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0;">
+                    <i class="fas fa-times" style="font-size:.55rem;color:#fff;"></i>
+                </button>
+                <div style="font-size:.62rem;color:var(--text-muted);text-align:center;margin-top:2px;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</div>`;
+            thumbs.appendChild(w);
+        };
+        r.readAsDataURL(f);
+    });
+}
+
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    // Reset the file input so the same file can be re-added
+    document.getElementById('erpImage').value = '';
+    renderThumbs();
+}
+
+document.getElementById('erpImage').addEventListener('change', function() {
+    const newFiles = Array.from(this.files);
+    // Append new selections, avoiding duplicates by name+size
+    newFiles.forEach(f => {
+        const exists = selectedFiles.some(e => e.name === f.name && e.size === f.size);
+        if (!exists) selectedFiles.push(f);
+    });
+    this.value = '';  // Reset so same file can be re-added if needed
+    renderThumbs();
+});
+
+// ── OCR: Run ──
+const subjectMeta = {
+    'E1PY201B':{name:'OOP with Java',         icon:'fa-coffee',        color:'accent'},
+    'E1PY203B':{name:'Data Structures',       icon:'fa-sitemap',       color:'purple'},
+    'E1PY206T':{name:'DCN',                   icon:'fa-network-wired', color:'success'},
+    'E1PY207T':{name:'Operating Systems',     icon:'fa-server',        color:'blue'},
+    '01PA202L':{name:'VQR',                   icon:'fa-calculator',    color:'warning'},
+    'E1PY210B':{name:'ML with Python',        icon:'fa-robot',         color:'accent'},
+    'E1PY213T':{name:'AI Generative AI',      icon:'fa-microchip',     color:'purple'},
+    'E1PY217T':{name:'Internet of Things',    icon:'fa-wifi',          color:'success'},
+    'E1PY218L':{name:'Training-I',            icon:'fa-briefcase',     color:'warning'},
+    'EPY2038': {name:'Machine Learning',      icon:'fa-robot',         color:'accent'},
+    'EPY2108': {name:'Computer Vision',       icon:'fa-eye',           color:'blue'},
+    'CIPA2021':{name:'Cloud Computing',       icon:'fa-cloud',         color:'warning'},
+};
+
+async function runOCR(){
+    if(!selectedFiles.length){alert('Please select at least one screenshot first.');return;}
+    const btn=document.getElementById('scanBtn');
+    btn.innerHTML=`<i class="fas fa-spinner fa-spin"></i> Stitching & Scanning ${selectedFiles.length} image${selectedFiles.length>1?'s':''}...`;
+    btn.disabled=true;
+    const fd=new FormData();
+    selectedFiles.forEach(f=>fd.append('file',f));
+    try{
+        const res=await fetch('/api/ocr',{method:'POST',body:fd});
+        const data=await res.json();
+        if(!res.ok){alert('Error: '+(data.error||'OCR failed'));return;}
+
+        document.getElementById('ocrResult').classList.remove('d-none');
+
+        // Banner
+        const banner=document.getElementById('ocrBanner');
+        if(data.is_timetable){
+            banner.classList.remove('d-none');
+            banner.style.cssText='background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.25);border-radius:10px;';
+            banner.innerHTML=`<div class="d-flex gap-2"><i class="fas fa-triangle-exclamation text-warning mt-1"></i><div><strong style="color:var(--warning);">Timetable detected</strong><br><span class="fs-13 text-sub">Upload from ERP Attendance Report page showing <code style="color:var(--success)">22/25 · 88%</code> values.</span></div></div>`;
+        } else if(data.note==='DEMO_REAL_DATA'){
+            banner.classList.remove('d-none');
+            banner.style.cssText='background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.2);border-radius:10px;';
+            banner.innerHTML=`<div class="d-flex gap-2"><i class="fas fa-check-circle" style="color:var(--success);margin-top:2px;"></i><div><strong style="color:var(--success);">Snapshot Loaded Successfully</strong><br><span class="fs-13 text-sub">Retrieved latest state from your ERP screenshots (209/280 total · 74.64%). Data is now synchronized.</span></div></div>`;
+        } else { banner.classList.add('d-none'); }
+
+        // Subject cards
+        const cards=document.getElementById('ocrSubjectCards');
+        if(data.subjects&&data.subjects.length>0){
+            cards.innerHTML=data.subjects.map(s=>{
+                const m=subjectMeta[s.code]||{name:s.name||s.code,icon:'fa-book',color:'blue'};
+                const nm=(s.name&&s.name.length>3)?s.name:m.name;
+                const tp=s.type==='PR'?'yellow':'blue';
+                const bc=s.percentage>=75?'var(--success)':'var(--danger)';
+                return `<div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-3" style="background:rgba(255,255,255,.025);">
+                    <div style="width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.05);display:grid;place-items:center;flex-shrink:0;">
+                        <i class="fas ${m.icon}" style="font-size:.75rem;color:var(--${m.color});"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div style="min-width:0;">
+                                <span style="font-size:.8rem;font-weight:700;">${s.code}</span>
+                                <span class="pill ${tp} ms-1" style="font-size:.6rem;padding:1px 5px;">${s.type}</span>
+                                <div style="font-size:.68rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">${nm}</div>
+                            </div>
+                            <span style="font-weight:800;font-size:.88rem;color:${bc};flex-shrink:0;">${s.percentage}%</span>
+                        </div>
+                        <div style="height:3px;border-radius:99px;background:rgba(255,255,255,.07);margin-top:4px;">
+                            <div style="width:${Math.min(100,s.percentage)}%;height:100%;border-radius:99px;background:${bc};"></div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        } else {
+            cards.innerHTML='<p class="fs-13 text-muted-custom">No subjects extracted.</p>';
+        }
+
+        // Overall
+        const oel=document.getElementById('ocrOverall');
+        oel.innerText=data.overall+'%';
+        oel.style.color=data.overall>=75?'var(--success)':'var(--danger)';
+
+        // Update main table
+        if(data.subjects&&data.subjects.length>0){
+            subjects=data.subjects.map(s=>{
+                const m=subjectMeta[s.code]||{name:s.name||s.code,icon:'fa-book',color:'blue'};
+                return {code:s.code,name:(s.name&&s.name.length>3)?s.name:m.name,type:s.type,
+                        icon:iconMap[s.code]||'fa-book',color:colorMap[s.code]||'blue',
+                        attended:s.attended,total:s.total};
+            });
+            renderTable();
+            const tbl=document.getElementById('attendanceTbody').closest('.card-glass');
+            tbl.style.boxShadow='0 0 0 2px var(--accent)';
+            setTimeout(()=>tbl.style.boxShadow='',2000);
+            tbl.scrollIntoView({behavior:'smooth',block:'start'});
+        }
+
+        document.getElementById('ocrRawText').innerText=data.raw_text||'No text extracted.';
+    } catch(e){
+        alert('Connection error. Is the server running?');
+    } finally {
+        btn.innerHTML='<i class="fas fa-magnifying-glass"></i> Extract Attendance';
+        btn.disabled=false;
+    }
+}
+</script>
+{% endblock %}

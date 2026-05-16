@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block title %}Analytics - Smart Student Optimizer{% endblock %}
+{% block header %}Interactive Analytics{% endblock %}
+{% block subheader %}Python + ML dataset analysis for performance, lifestyle, stress, and productivity{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4 fade-in-up delay-1">
+        <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="fas fa-database"></i></div>
+            <div class="stat-label">Total Records Analyzed</div>
+            <div class="stat-value blue" id="analyticsTotalRecords">--</div>
+            <span class="stat-badge flat" id="analyticsRecordBadge">Across 3 datasets</span>
+        </div>
+    </div>
+    <div class="col-md-4 fade-in-up delay-2">
+        <div class="stat-card green">
+            <div class="stat-icon green"><i class="fas fa-link"></i></div>
+            <div class="stat-label">Study-Score Correlation</div>
+            <div class="stat-value green" id="studyCorr">--</div>
+            <span class="stat-badge up"><i class="fas fa-chart-line me-1"></i>Performance dataset</span>
+        </div>
+    </div>
+    <div class="col-md-4 fade-in-up delay-3">
+        <div class="stat-card purple">
+            <div class="stat-icon purple"><i class="fas fa-microchip"></i></div>
+            <div class="stat-label">Active ML Pipelines</div>
+            <div class="stat-value purple" id="analyticsPipelines">--</div>
+            <span class="stat-badge flat" id="analyticsModelsBadge">Checking models...</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-8 fade-in-up delay-2">
+        <div class="card-glass p-4">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Study Hours vs Overall Score</div>
+                    <div class="section-sub">Sample scatter from Student Performance data</div>
+                </div>
+                <div id="scatter-loader" class="spinner-border spinner-border-sm text-accent" role="status"></div>
+            </div>
+            <div id="scatterChart" style="height:320px;"></div>
+        </div>
+    </div>
+    <div class="col-xl-4 fade-in-up delay-3">
+        <div class="card-glass p-4">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Final Grade Distribution</div>
+                    <div class="section-sub">A/B/C/D/F count analysis</div>
+                </div>
+            </div>
+            <div id="gradeChart" style="height:320px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-6 fade-in-up delay-3">
+        <div class="card-glass p-4">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Attendance vs Grade</div>
+                    <div class="section-sub">Average attendance percentage for each final grade</div>
+                </div>
+            </div>
+            <div id="attendanceGradeChart" style="height:300px;"></div>
+        </div>
+    </div>
+    <div class="col-xl-6 fade-in-up delay-3">
+        <div class="card-glass p-4">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Lifestyle Correlation Matrix</div>
+                    <div class="section-sub">Study, sleep, screen time, gym, and stress</div>
+                </div>
+            </div>
+            <div id="lifestyleHeatmap" style="height:300px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-xl-4 fade-in-up delay-4">
+        <div class="card-glass p-4 h-100">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Stress Distribution</div>
+                    <div class="section-sub">Low, moderate, and high stress buckets</div>
+                </div>
+            </div>
+            <div id="pieChart" style="height:270px;"></div>
+        </div>
+    </div>
+    <div class="col-xl-4 fade-in-up delay-4">
+        <div class="card-glass p-4 h-100">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Productivity Factors</div>
+                    <div class="section-sub">Correlation with productivity score</div>
+                </div>
+            </div>
+            <div id="productivityFactorChart" style="height:270px;"></div>
+        </div>
+    </div>
+    <div class="col-xl-4 fade-in-up delay-4">
+        <div class="card-glass p-4 h-100">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Data Insights</div>
+                    <div class="section-sub">Auto-generated from current datasets</div>
+                </div>
+            </div>
+            <div id="insightList" style="display:flex;flex-direction:column;gap:9px;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-7 fade-in-up delay-4">
+        <div class="card-glass p-4">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Phone Usage vs Productivity Score</div>
+                    <div class="section-sub">Raw sample points from productivity dataset</div>
+                </div>
+            </div>
+            <div id="prodChart" style="height:300px;"></div>
+        </div>
+    </div>
+    <div class="col-xl-5 fade-in-up delay-4">
+        <div class="card-glass p-4">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Average Productivity by Phone Usage</div>
+                    <div class="section-sub">Grouped bins make the trend easier to explain</div>
+                </div>
+            </div>
+            <div id="phoneBinChart" style="height:300px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const commonLayout = {
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    font: { color: '#94A3B8', family: 'Inter', size: 11 },
+    margin: { t: 14, l: 45, r: 18, b: 42 },
+    xaxis: { gridcolor: 'rgba(255,255,255,0.05)', linecolor: 'rgba(255,255,255,0.08)', zerolinecolor: 'rgba(255,255,255,0.08)' },
+    yaxis: { gridcolor: 'rgba(255,255,255,0.05)', linecolor: 'rgba(255,255,255,0.08)', zerolinecolor: 'rgba(255,255,255,0.08)' }
+};
+const plotConfig = { displayModeBar: false, responsive: true };
+
+function renderInsights(items) {
+    const list = document.getElementById('insightList');
+    list.innerHTML = (items || []).map((text, i) => `
+        <div class="suggestion-item ${i === 0 ? 'info' : i === 1 ? 'good' : i === 2 ? 'warn' : 'alert'}">
+            <div class="suggestion-icon ${i === 0 ? 'info' : i === 1 ? 'good' : i === 2 ? 'warn' : 'alert'}">
+                <i class="fas ${i === 0 ? 'fa-link' : i === 1 ? 'fa-calendar-check' : i === 2 ? 'fa-graduation-cap' : 'fa-bolt'}"></i>
+            </div>
+            <div class="suggestion-text">${text}</div>
+        </div>
+    `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const res = await fetch('/api/analytics_data', { cache: 'no-store' });
+        const d = await res.json();
+        if (!res.ok || d.error) throw new Error(d.error || 'Analytics data request failed');
+        document.getElementById('scatter-loader').style.display = 'none';
+
+        const meta = d.meta || {};
+        const totalRecords = Number(meta.total_records || 0);
+        document.getElementById('analyticsTotalRecords').textContent = totalRecords ? totalRecords.toLocaleString() : '--';
+        document.getElementById('analyticsRecordBadge').textContent = `${meta.performance_records || 0} + ${meta.lifestyle_records || 0} + ${meta.productivity_records || 0} rows`;
+        document.getElementById('studyCorr').textContent = d.performance_corr?.study_score ?? '--';
+        document.getElementById('analyticsPipelines').textContent = meta.active_pipelines ?? '--';
+        document.getElementById('analyticsModelsBadge').textContent = meta.models_loaded ? 'All models loaded' : 'Models unavailable';
+        renderInsights(d.insights);
+
+        Plotly.newPlot('scatterChart', [{
+            x: d.study_vs_score.x,
+            y: d.study_vs_score.y,
+            mode: 'markers',
+            type: 'scatter',
+            marker: { color: '#38BDF8', size: 6, opacity: 0.55 }
+        }], {
+            ...commonLayout,
+            xaxis: { ...commonLayout.xaxis, type: 'linear', title: { text: 'Study Hours', font: { size: 11 } } },
+            yaxis: { ...commonLayout.yaxis, type: 'linear', title: { text: 'Overall Score', font: { size: 11 } }, range: [0, 100] }
+        }, plotConfig);
+
+        Plotly.newPlot('gradeChart', [{
+            x: d.grade_dist.labels,
+            y: d.grade_dist.values,
+            type: 'bar',
+            marker: { color: ['#22C55E', '#38BDF8', '#FACC15', '#FB923C', '#EF4444'] }
+        }], {
+            ...commonLayout,
+            xaxis: { ...commonLayout.xaxis, title: { text: 'Final Grade', font: { size: 11 } } },
+            yaxis: { ...commonLayout.yaxis, title: { text: 'Students', font: { size: 11 } } }
+        }, plotConfig);
+
+        Plotly.newPlot('attendanceGradeChart', [{
+            x: d.attendance_by_grade.labels,
+            y: d.attendance_by_grade.values,
+            type: 'bar',
+            marker: { color: '#34D399' }
+        }], {
+            ...commonLayout,
+            xaxis: { ...commonLayout.xaxis, title: { text: 'Final Grade', font: { size: 11 } } },
+            yaxis: { ...commonLayout.yaxis, title: { text: 'Avg Attendance %', font: { size: 11 } }, range: [0, 100] }
+        }, plotConfig);
+
+        Plotly.newPlot('lifestyleHeatmap', [{
+            z: d.lifestyle_corr.z,
+            x: d.lifestyle_corr.labels,
+            y: d.lifestyle_corr.labels,
+            type: 'heatmap',
+            colorscale: [[0, '#EF4444'], [0.5, '#111827'], [1, '#22C55E']],
+            zmin: -1,
+            zmax: 1,
+            showscale: false,
+            hovertemplate: '%{y} vs %{x}: %{z}<extra></extra>'
+        }], {
+            ...commonLayout,
+            margin: { t: 14, l: 58, r: 12, b: 48 }
+        }, plotConfig);
+
+        Plotly.newPlot('pieChart', [{
+            values: d.stress_dist.values,
+            labels: d.stress_dist.labels,
+            type: 'pie',
+            hole: 0.55,
+            marker: { colors: ['#22C55E', '#FACC15', '#EF4444'] },
+            textinfo: 'label+percent',
+            textfont: { color: '#94A3B8', size: 11 },
+            hoverinfo: 'label+value+percent'
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#94A3B8', family: 'Inter' },
+            margin: { t: 10, l: 10, r: 10, b: 10 },
+            showlegend: true,
+            legend: { orientation: 'h', y: -0.1, font: { size: 11 } }
+        }, plotConfig);
+
+        Plotly.newPlot('productivityFactorChart', [{
+            x: d.productivity_factors.values,
+            y: d.productivity_factors.labels,
+            type: 'bar',
+            orientation: 'h',
+            marker: { color: d.productivity_factors.values.map(v => v >= 0 ? '#22C55E' : '#EF4444') }
+        }], {
+            ...commonLayout,
+            margin: { t: 14, l: 92, r: 18, b: 38 },
+            xaxis: { ...commonLayout.xaxis, title: { text: 'Correlation', font: { size: 11 } }, range: [-1, 1] }
+        }, plotConfig);
+
+        Plotly.newPlot('prodChart', [{
+            x: d.prod_trend.x,
+            y: d.prod_trend.y,
+            mode: 'markers',
+            type: 'scatter',
+            marker: { color: '#EF4444', size: 5, opacity: 0.38 }
+        }], {
+            ...commonLayout,
+            xaxis: { ...commonLayout.xaxis, type: 'linear', title: { text: 'Phone Usage Hours', font: { size: 11 } } },
+            yaxis: { ...commonLayout.yaxis, type: 'linear', title: { text: 'Productivity Score', font: { size: 11 } }, range: [0, 100] }
+        }, plotConfig);
+
+        Plotly.newPlot('phoneBinChart', [{
+            x: d.phone_productivity.labels,
+            y: d.phone_productivity.values,
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: { color: '#A78BFA', width: 3, shape: 'spline' },
+            marker: { color: '#A78BFA', size: 8 }
+        }], {
+            ...commonLayout,
+            xaxis: { ...commonLayout.xaxis, type: 'category', title: { text: 'Daily Phone Usage', font: { size: 11 } } },
+            yaxis: { ...commonLayout.yaxis, type: 'linear', autorange: false, range: [0, 100], title: { text: 'Avg Productivity', font: { size: 11 } } }
+        }, plotConfig);
+    } catch (err) {
+        console.error('Analytics data load failed', err);
+        document.getElementById('scatter-loader').style.display = 'none';
+        renderInsights(['Analytics data could not be loaded. Check the Flask server console for the exact error.']);
+    }
+});
+</script>
+{% endblock %}

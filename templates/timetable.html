@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+{% block title %}Timetable — Smart Student Optimizer{% endblock %}
+{% block header %}College Timetable{% endblock %}
+{% block subheader %}MCA_IOP(AIML) · 2025–2026 Sem II · Weekly Grid{% endblock %}
+
+{% block content %}
+
+<!-- Compact KPI strip -->
+<div class="card-glass p-3 mb-3 fade-in-up delay-1">
+    <div class="d-flex align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <div style="width:34px;height:34px;border-radius:8px;background:rgba(56,189,248,.1);display:grid;place-items:center;flex-shrink:0;">
+                <i class="fas fa-calendar-week" style="color:var(--accent);font-size:.8rem;"></i>
+            </div>
+            <div>
+                <div style="font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">MCA SEM II · 2025-26</div>
+                <div style="font-size:.88rem;font-weight:700;color:var(--text-primary);">Week of 11–17 May 2026</div>
+            </div>
+        </div>
+        <div style="width:1px;height:34px;background:var(--border);"></div>
+        <div class="text-center px-2">
+            <div style="font-size:.6rem;color:var(--text-muted);text-transform:uppercase;">Subjects</div>
+            <div style="font-size:1.2rem;font-weight:800;color:var(--accent);" id="kpiSubjects">--</div>
+        </div>
+        <div style="width:1px;height:34px;background:var(--border);"></div>
+        <div class="text-center px-2">
+            <div style="font-size:.6rem;color:var(--text-muted);text-transform:uppercase;">Sessions</div>
+            <div style="font-size:1.2rem;font-weight:800;color:var(--success);" id="kpiTotal">--</div>
+        </div>
+        <div style="width:1px;height:34px;background:var(--border);"></div>
+        <div class="text-center px-2">
+            <div style="font-size:.6rem;color:var(--text-muted);text-transform:uppercase;">Lab (PR)</div>
+            <div style="font-size:1.2rem;font-weight:800;color:var(--warning);" id="kpiLab">--</div>
+        </div>
+        <div style="width:1px;height:34px;background:var(--border);"></div>
+        <div class="text-center px-2">
+            <div style="font-size:.6rem;color:var(--text-muted);text-transform:uppercase;">Theory (PP)</div>
+            <div style="font-size:1.2rem;font-weight:800;color:var(--purple,#a78bfa);" id="kpiTheory">--</div>
+        </div>
+        <div style="width:1px;height:34px;background:var(--border);"></div>
+        <!-- Type filter pills -->
+        <div class="d-flex gap-2">
+            <button class="tt-filter-btn active" id="filterAll" onclick="setFilter('all')">All</button>
+            <button class="tt-filter-btn" id="filterPP"  onclick="setFilter('PP')"><i class="fas fa-chalkboard me-1"></i>Theory</button>
+            <button class="tt-filter-btn" id="filterPR"  onclick="setFilter('PR')"><i class="fas fa-flask me-1"></i>Lab</button>
+        </div>
+    </div>
+</div>
+
+<!-- Today banner -->
+<div class="card-glass p-3 mb-3 fade-in-up delay-2" id="todayBanner" style="display:none;border-left:3px solid var(--accent);">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fas fa-bolt" style="color:var(--accent);"></i>
+            <span style="font-weight:700;font-size:.9rem;">Today — <span id="todayLabel" style="color:var(--accent);"></span></span>
+        </div>
+        <div id="todayPills" class="d-flex gap-2 flex-wrap"></div>
+    </div>
+</div>
+
+<!-- Weekly Grid -->
+<div class="card-glass p-3 fade-in-up delay-3" style="overflow-x:auto;">
+    <div id="ttGrid" style="min-width:700px;"></div>
+</div>
+
+<!-- Upload + Legend row -->
+<div class="row g-3 mt-1">
+    <!-- Update Timetable -->
+    <div class="col-lg-6 fade-in-up delay-4">
+        <div class="card-glass p-4 h-100">
+            <div class="section-header mb-3">
+                <div>
+                    <div class="section-title" style="font-size:.9rem;"><i class="fas fa-upload me-2" style="color:var(--accent);"></i>Update Timetable</div>
+                    <div class="section-sub">Upload CSV or paste ERP text</div>
+                </div>
+                <a href="/api/timetable/download" download="timetable.csv" class="tt-filter-btn" style="text-decoration:none;">
+                    <i class="fas fa-download me-1"></i>CSV
+                </a>
+            </div>
+            <div class="d-flex gap-2 mb-3">
+                <button class="tt-filter-btn active" id="tabCsv"   onclick="switchTab('csv')"><i class="fas fa-file-csv me-1"></i>Upload CSV</button>
+                <button class="tt-filter-btn"        id="tabPaste" onclick="switchTab('paste')"><i class="fas fa-paste me-1"></i>Paste ERP</button>
+            </div>
+            <!-- CSV upload -->
+            <div id="panelCsv">
+                <div id="ttUploadZone" onclick="document.getElementById('ttCsvInput').click()"
+                     ondragover="event.preventDefault();this.style.borderColor='var(--accent)';"
+                     ondragleave="this.style.borderColor=''"
+                     ondrop="handleTTDrop(event)"
+                     style="border:2px dashed var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:border-color .2s;">
+                    <i class="fas fa-file-csv" style="font-size:1.2rem;color:var(--accent);"></i>
+                    <div style="font-weight:600;font-size:.82rem;" id="ttUploadLabel">Click or drag-drop CSV here</div>
+                    <div style="font-size:.65rem;color:var(--text-muted);">day, time_start, time_end, subject_code, subject_type…</div>
+                    <input type="file" id="ttCsvInput" accept=".csv" class="d-none" onchange="uploadTimetable(this.files[0])">
+                </div>
+                <div id="ttUploadStatus" class="mt-2 d-none"></div>
+            </div>
+            <!-- Paste ERP -->
+            <div id="panelPaste" style="display:none;">
+                <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:6px;">
+                    <i class="fas fa-info-circle" style="color:var(--accent);"></i>
+                    Copy full text from ERP Timetable Details page and paste below
+                </div>
+                <textarea id="pasteArea" placeholder="Paste timetable text here…&#10;Mon&#9;12:00 - 12:50&#9;Faculty Name&#9;Subject (PP)&#10;Section (ROOM)"
+                    style="width:100%;height:140px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:10px;font-size:.74rem;font-family:monospace;resize:vertical;outline:none;"></textarea>
+                <div class="d-flex gap-2 mt-2 align-items-center">
+                    <button class="tt-filter-btn active" id="pasteBtn" onclick="savePastedTimetable()" style="padding:8px 16px;">
+                        <i class="fas fa-save me-1"></i>Save Timetable
+                    </button>
+                    <span style="font-size:.68rem;color:var(--text-muted);">Updates live instantly</span>
+                </div>
+                <div id="pasteStatus" class="mt-2 d-none"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject Legend -->
+    <div class="col-lg-6 fade-in-up delay-4">
+        <div class="card-glass p-4 h-100">
+            <div class="section-title mb-3" style="font-size:.9rem;">Subject Reference</div>
+            <div id="subjectLegend" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.tt-filter-btn {
+    padding: 6px 13px; border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.03);
+    color: var(--text-muted); font-size: .75rem; font-weight: 600;
+    cursor: pointer; transition: all .18s; white-space: nowrap;
+}
+.tt-filter-btn:hover  { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+.tt-filter-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+
+/* Grid */
+.tt-grid-table { width:100%; border-collapse: separate; border-spacing: 5px; }
+.tt-time-col   { font-family:monospace; font-size:.7rem; font-weight:700; color:var(--text-muted);
+                 padding:4px 10px; text-align:right; white-space:nowrap; vertical-align:top;
+                 padding-top:12px; width:85px; }
+.tt-day-hdr    { text-align:center; padding:10px 4px; font-size:.72rem; font-weight:700;
+                 text-transform:uppercase; letter-spacing:.06em; border-radius:10px;
+                 background:rgba(255,255,255,.03); border:1px solid var(--border); }
+.tt-day-hdr.today { background:rgba(56,189,248,.08); color:var(--accent);
+                    border-color:rgba(56,189,248,.3); box-shadow:0 0 12px rgba(56,189,248,.08); }
+.tt-cell       { vertical-align: top; padding: 2px; min-width: 120px; }
+.tt-empty      { height: 54px; border-radius:8px; border:1px dashed rgba(255,255,255,.07);
+                 background:rgba(255,255,255,.01); }
+.tt-slot       { border-radius: 9px; padding: 7px 9px; margin-bottom: 4px;
+                 border-left: 3px solid; transition: all .18s;
+                 cursor: default; position:relative; }
+.tt-slot:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.3); filter:brightness(1.15); }
+.tt-slot-code  { font-size: .72rem; font-weight: 800; display:flex; align-items:center; gap:4px; }
+.tt-slot-fac   { font-size: .6rem; color: rgba(255,255,255,.4); margin-top:2px;
+                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px; }
+.tt-slot-meta  { font-size: .6rem; color: rgba(255,255,255,.35); margin-top:1px; }
+.tt-slot-type  { display:inline-block; font-size:.55rem; font-weight:700; padding:1px 5px;
+                 border-radius:4px; }
+</style>
+
+<script>
+const subjectMeta = {
+    'E1PY201B': { name:'OOP with Java',      short:'OOP',  icon:'fa-coffee',        color:'#38bdf8', bg:'rgba(56,189,248,.1)'  },
+    'E1PY203B': { name:'Data Structures',    short:'DS',   icon:'fa-sitemap',       color:'#a78bfa', bg:'rgba(167,139,250,.1)' },
+    'E1PY206T': { name:'DCN',                short:'DCN',  icon:'fa-network-wired', color:'#34d399', bg:'rgba(52,211,153,.1)'  },
+    'E1PY207T': { name:'Oper. Systems',      short:'OS',   icon:'fa-server',        color:'#60a5fa', bg:'rgba(96,165,250,.1)'  },
+    '01PA202L': { name:'VQR',                short:'VQR',  icon:'fa-calculator',    color:'#fbbf24', bg:'rgba(251,191,36,.1)'  },
+    'E1PY210B': { name:'ML with Python',     short:'ML',   icon:'fa-robot',         color:'#f472b6', bg:'rgba(244,114,182,.1)' },
+    'E1PY213T': { name:'AI Gen AI',          short:'AI',   icon:'fa-microchip',     color:'#c084fc', bg:'rgba(192,132,252,.1)' },
+    'E1PY217T': { name:'IoT',                short:'IoT',  icon:'fa-wifi',          color:'#4ade80', bg:'rgba(74,222,128,.1)'  },
+    'E1PY218L': { name:'Training-I',         short:'TRN',  icon:'fa-briefcase',     color:'#fb923c', bg:'rgba(251,146,60,.1)'  },
+};
+
+const WEEK_DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const DAY_SHORT = { Monday:'Mon', Tuesday:'Tue', Wednesday:'Wed', Thursday:'Thu', Friday:'Fri', Saturday:'Sat', Sunday:'Sun' };
+
+let allData = [], activeFilter = 'all';
+
+async function loadTimetable() {
+    try {
+        const res = await fetch('/api/timetable', { cache: 'no-store' });
+        allData = await res.json();
+        if (!res.ok || allData.error) throw new Error(allData.error || 'Failed to load timetable');
+        updateKPIs();
+        renderTodayBanner();
+        renderGrid();
+        renderLegend();
+    } catch(e) {
+        document.getElementById('ttGrid').innerHTML =
+            '<div style="text-align:center;padding:40px;color:var(--danger);">Failed to load timetable.</div>';
+    }
+}
+
+function setFilter(f) {
+    activeFilter = f;
+    ['filterAll','filterPP','filterPR'].forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById(f === 'all' ? 'filterAll' : 'filter'+f).classList.add('active');
+    renderGrid();
+}
+
+function updateKPIs() {
+    const codes = new Set(allData.map(r => r.subject_code));
+    document.getElementById('kpiSubjects').innerText = codes.size;
+    document.getElementById('kpiTotal').innerText    = allData.length;
+    document.getElementById('kpiLab').innerText      = allData.filter(r => r.subject_type === 'PR').length;
+    document.getElementById('kpiTheory').innerText   = allData.filter(r => r.subject_type === 'PP').length;
+}
+
+function getDisplayDays(data) {
+    const uploadedDays = new Set(data.map(r => r.day).filter(Boolean));
+    return WEEK_DAYS.filter(day => uploadedDays.has(day));
+}
+
+function timeToMin(time) {
+    const [h, m] = String(time || '').split(':').map(Number);
+    return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : 0;
+}
+
+function getTimeSlots(data) {
+    return [...new Set(data.map(r => r.time_start).filter(Boolean))]
+        .sort((a, b) => timeToMin(a) - timeToMin(b));
+}
+
+function renderTodayBanner() {
+    const jsDay = new Date().getDay();
+    const map   = {0:'Sunday',1:'Monday',2:'Tuesday',3:'Wednesday',4:'Thursday',5:'Friday',6:'Saturday'};
+    const today = map[jsDay];
+    const todayRows = allData.filter(r => r.day === today).sort((a,b) => a.time_start.localeCompare(b.time_start));
+    if (!todayRows.length) {
+        document.getElementById('todayBanner').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('todayBanner').style.display = '';
+    document.getElementById('todayLabel').innerText = DAY_SHORT[today] || today;
+    document.getElementById('todayPills').innerHTML = todayRows.map(r => {
+        const m  = subjectMeta[r.subject_code] || { short: r.subject_code, color:'#38bdf8', bg:'rgba(56,189,248,.1)' };
+        const tp = r.subject_type === 'PR' ? '#fbbf24' : '#60a5fa';
+        return `<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:6px;background:${m.bg};color:${m.color};border:1px solid ${m.color}22;white-space:nowrap;">
+            ${r.time_start} ${m.short}
+            <span style="color:${tp};font-size:.6rem;"> ${r.subject_type}</span>
+        </span>`;
+    }).join('');
+}
+
+function renderGrid() {
+    const jsDay = new Date().getDay();
+    const todayMap = {0:'Sunday',1:'Monday',2:'Tuesday',3:'Wednesday',4:'Thursday'};
+    const todayName = todayMap[jsDay] || '';
+
+    // Build lookup: day → timeStart → [rows]
+    const lookup = {};
+    DAYS.forEach(d => lookup[d] = {});
+    const filtered = activeFilter === 'all' ? allData : allData.filter(r => r.subject_type === activeFilter);
+    filtered.forEach(r => {
+        if (!lookup[r.day]) return;
+        const key = r.time_start;
+        if (!lookup[r.day][key]) lookup[r.day][key] = [];
+        lookup[r.day][key].push(r);
+    });
+
+    // Determine which time slots are actually used
+    const usedSlots = TIME_SLOTS.filter(ts =>
+        DAYS.some(d => (lookup[d][ts] || []).length > 0)
+    );
+
+    // Build table
+    let html = '<table class="tt-grid-table"><thead><tr>';
+    html += '<th class="tt-time-col" style="color:transparent;">Time</th>';
+    DAYS.forEach(d => {
+        const isToday = d === todayName;
+        const date    = d === 'Monday' ? '11/05' : d === 'Tuesday' ? '12/05' : d === 'Wednesday' ? '13/05' :
+                        d === 'Thursday' ? '14/05' : '17/05';
+        html += `<th class="tt-day-hdr${isToday ? ' today' : ''}">
+            ${DAY_SHORT[d]}
+            <div style="font-size:.6rem;font-weight:400;opacity:.6;margin-top:1px;">${date}</div>
+        </th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    usedSlots.forEach(ts => {
+        html += '<tr>';
+        html += `<td class="tt-time-col">
+            <div>${ts}</div>
+            <div style="font-size:.6rem;opacity:.5;">–${TIME_ENDS[ts]||''}</div>
+        </td>`;
+        DAYS.forEach(d => {
+            const cells = lookup[d][ts] || [];
+            html += '<td class="tt-cell">';
+            if (cells.length === 0) {
+                html += '<div class="tt-empty"></div>';
+            } else {
+                cells.forEach(r => {
+                    const m  = subjectMeta[r.subject_code] || { name: r.subject_name||r.subject_code, short:r.subject_code, color:'#38bdf8', bg:'rgba(56,189,248,.1)' };
+                    const tc = r.subject_type === 'PR' ? '#fbbf24' : '#60a5fa';
+                    const tl = r.subject_type === 'PR' ? 'Lab' : 'Th';
+                    const facShort = (r.faculty||'').split(' ').slice(-2).join(' ');
+                    html += `<div class="tt-slot" style="background:${m.bg};border-left-color:${m.color};" title="${r.subject_name||m.name}&#10;${r.faculty||''}&#10;${r.room}">
+                        <div class="tt-slot-code" style="color:${m.color};">
+                            ${m.short}
+                            <span class="tt-slot-type" style="background:${tc}22;color:${tc};">${tl}</span>
+                        </div>
+                        <div class="tt-slot-fac">${facShort}</div>
+                        <div class="tt-slot-meta">${r.room}</div>
+                    </div>`;
+                });
+            }
+            html += '</td>';
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('ttGrid').innerHTML = html;
+}
+
+function renderGrid() {
+    const jsDay = new Date().getDay();
+    const todayMap = {0:'Sunday',1:'Monday',2:'Tuesday',3:'Wednesday',4:'Thursday',5:'Friday',6:'Saturday'};
+    const todayName = todayMap[jsDay] || '';
+    const days = getDisplayDays(allData);
+    const timeSlots = getTimeSlots(allData);
+
+    if (!days.length || !timeSlots.length) {
+        document.getElementById('ttGrid').innerHTML =
+            '<div style="text-align:center;padding:40px;color:var(--text-muted);">Upload a timetable to populate the grid.</div>';
+        return;
+    }
+
+    const lookup = {};
+    days.forEach(d => lookup[d] = {});
+    const filtered = activeFilter === 'all' ? allData : allData.filter(r => r.subject_type === activeFilter);
+    filtered.forEach(r => {
+        if (!lookup[r.day]) return;
+        const key = r.time_start;
+        if (!lookup[r.day][key]) lookup[r.day][key] = [];
+        lookup[r.day][key].push(r);
+    });
+
+    const usedSlots = timeSlots.filter(ts =>
+        days.some(d => (lookup[d][ts] || []).length > 0)
+    );
+
+    let html = '<table class="tt-grid-table"><thead><tr>';
+    html += '<th class="tt-time-col" style="color:transparent;">Time</th>';
+    days.forEach(d => {
+        const isToday = d === todayName;
+        html += `<th class="tt-day-hdr${isToday ? ' today' : ''}">
+            ${DAY_SHORT[d]}
+            <div style="font-size:.6rem;font-weight:400;opacity:.6;margin-top:1px;">${d}</div>
+        </th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    usedSlots.forEach(ts => {
+        html += '<tr>';
+        const slotEnd = allData.find(r => r.time_start === ts)?.time_end || '';
+        html += `<td class="tt-time-col">
+            <div>${ts}</div>
+            <div style="font-size:.6rem;opacity:.5;">-${slotEnd}</div>
+        </td>`;
+        days.forEach(d => {
+            const cells = lookup[d][ts] || [];
+            html += '<td class="tt-cell">';
+            if (cells.length === 0) {
+                html += '<div class="tt-empty"></div>';
+            } else {
+                cells.forEach(r => {
+                    const m = subjectMeta[r.subject_code] || { name: r.subject_name || r.subject_code, short: r.subject_code, color:'#38bdf8', bg:'rgba(56,189,248,.1)' };
+                    const tc = r.subject_type === 'PR' ? '#fbbf24' : '#60a5fa';
+                    const tl = r.subject_type === 'PR' ? 'Lab' : 'Th';
+                    const facShort = (r.faculty || '').split(' ').slice(-2).join(' ');
+                    html += `<div class="tt-slot" style="background:${m.bg};border-left-color:${m.color};" title="${r.subject_name || m.name}&#10;${r.faculty || ''}&#10;${r.room || ''}">
+                        <div class="tt-slot-code" style="color:${m.color};">
+                            ${m.short}
+                            <span class="tt-slot-type" style="background:${tc}22;color:${tc};">${tl}</span>
+                        </div>
+                        <div class="tt-slot-fac">${facShort}</div>
+                        <div class="tt-slot-meta">${r.room || ''}</div>
+                    </div>`;
+                });
+            }
+            html += '</td>';
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('ttGrid').innerHTML = html;
+}
+
+function renderLegend() {
+    const codes = [...new Set(allData.map(r => r.subject_code))];
+    document.getElementById('subjectLegend').innerHTML = codes.map(code => {
+        const m    = subjectMeta[code] || { name:code, icon:'fa-book', color:'#38bdf8', bg:'rgba(56,189,248,.1)' };
+        const rows = allData.filter(r => r.subject_code === code);
+        const pp   = rows.filter(r => r.subject_type === 'PP').length;
+        const pr   = rows.filter(r => r.subject_type === 'PR').length;
+        const facs = [...new Set(rows.map(r => r.faculty).filter(Boolean))];
+        return `<div class="d-flex align-items-center gap-2" style="padding:7px 10px;border-radius:8px;background:${m.bg};border-left:3px solid ${m.color};">
+            <i class="fas ${m.icon}" style="color:${m.color};width:13px;font-size:.75rem;flex-shrink:0;"></i>
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:700;font-size:.75rem;color:var(--text-primary);">${code} <span style="font-size:.62rem;font-weight:400;color:var(--text-muted);">${m.name}</span></div>
+                <div style="font-size:.62rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${facs.join(' · ')}</div>
+            </div>
+            <div class="d-flex gap-1 flex-shrink-0">
+                ${pp>0?`<span style="font-size:.58rem;padding:1px 5px;border-radius:4px;background:rgba(96,165,250,.15);color:#60a5fa;">${pp}PP</span>`:''}
+                ${pr>0?`<span style="font-size:.58rem;padding:1px 5px;border-radius:4px;background:rgba(251,191,36,.15);color:#fbbf24;">${pr}PR</span>`:''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Tab switcher ──
+function switchTab(tab) {
+    document.getElementById('panelCsv').style.display   = tab === 'csv'   ? '' : 'none';
+    document.getElementById('panelPaste').style.display = tab === 'paste' ? '' : 'none';
+    document.getElementById('tabCsv').classList.toggle('active',   tab === 'csv');
+    document.getElementById('tabPaste').classList.toggle('active', tab === 'paste');
+}
+
+// ── CSV Upload ──
+function handleTTDrop(e) {
+    e.preventDefault();
+    document.getElementById('ttUploadZone').style.borderColor = '';
+    const file = e.dataTransfer.files[0];
+    if (file) uploadTimetable(file);
+}
+async function uploadTimetable(file) {
+    if (!file) return;
+    const zone   = document.getElementById('ttUploadZone');
+    const status = document.getElementById('ttUploadStatus');
+    const label  = document.getElementById('ttUploadLabel');
+    label.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Uploading…`;
+    zone.style.borderColor = 'var(--accent)';
+    status.classList.add('d-none');
+    const fd = new FormData(); fd.append('file', file);
+    try {
+        const res  = await fetch('/api/timetable/upload', { method:'POST', body:fd });
+        const data = await res.json();
+        status.classList.remove('d-none');
+        if (!res.ok || data.error) {
+            status.innerHTML = alertHtml('danger', data.error);
+            label.innerText = 'Click or drag-drop CSV here';
+            zone.style.borderColor = 'var(--danger)';
+        } else {
+            status.innerHTML = alertHtml('success', `${data.rows} sessions loaded · ${data.days.join(', ')}`);
+            label.innerHTML  = `<i class="fas fa-check me-2" style="color:var(--success);"></i>${file.name}`;
+            zone.style.borderColor = 'var(--success)';
+            await loadTimetable();
+        }
+    } catch(e) {
+        status.classList.remove('d-none');
+        status.innerHTML = alertHtml('danger','Connection error.');
+        label.innerText = 'Click or drag-drop CSV here';
+        zone.style.borderColor = '';
+    }
+    document.getElementById('ttCsvInput').value = '';
+}
+
+// ── Paste → Save ──
+async function savePastedTimetable() {
+    const text   = document.getElementById('pasteArea').value.trim();
+    const status = document.getElementById('pasteStatus');
+    const btn    = document.getElementById('pasteBtn');
+    if (!text) { alert('Paste text first.'); return; }
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving…';
+    btn.disabled  = true;
+    status.classList.add('d-none');
+    try {
+        const res  = await fetch('/api/timetable/parse-text', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text}) });
+        const data = await res.json();
+        status.classList.remove('d-none');
+        if (!res.ok || data.error) {
+            status.innerHTML = alertHtml('danger', data.error);
+        } else {
+            const un = data.unmatched?.length ? ` · No code for: ${[...new Set(data.unmatched)].join(', ')}` : '';
+            status.innerHTML = alertHtml('success', `Saved! ${data.rows} sessions · ${data.days.join(', ')}${un}`);
+            await loadTimetable();
+        }
+    } catch(e) { status.innerHTML = alertHtml('danger','Connection error.'); }
+    btn.innerHTML = '<i class="fas fa-save me-1"></i>Save Timetable';
+    btn.disabled  = false;
+}
+
+function alertHtml(type, msg) {
+    const colors = { success:['34,197,94','var(--success)'], danger:['239,68,68','var(--danger)'] };
+    const [rgb,col] = colors[type] || colors.danger;
+    const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
+    return `<div style="background:rgba(${rgb},.08);border:1px solid rgba(${rgb},.2);border-radius:8px;padding:10px 12px;font-size:.78rem;">
+        <i class="fas ${icon}" style="color:${col};"></i> ${msg}
+    </div>`;
+}
+
+loadTimetable();
+</script>
+{% endblock %}

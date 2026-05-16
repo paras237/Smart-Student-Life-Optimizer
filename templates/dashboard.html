@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Smart Student Optimizer{% endblock %}
+{% block header %}Overview Dashboard{% endblock %}
+{% block subheader %}Welcome back! Here's your academic snapshot for today.{% endblock %}
+
+{% block content %}
+<!-- ── KPI Row ── -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6 fade-in-up delay-1">
+        <div class="stat-card green">
+            <div class="stat-icon green"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-label">Overall Attendance</div>
+            <div class="stat-value green" id="dashOverallPct">--%</div>
+            <span class="stat-badge flat" id="dashAttBadge">Loading…</span>
+            <div class="progress-slim"><div class="bar" id="dashAttBar" style="width:0%;background:var(--success);" data-width="0"></div></div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 fade-in-up delay-2">
+        <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="fas fa-bolt"></i></div>
+            <div class="stat-label">Productivity Score</div>
+            <div class="stat-value blue" id="dashProductivity">78<span style="font-size:1rem">/100</span></div>
+            <span class="stat-badge up" id="dashProductivityBadge"><i class="fas fa-arrow-up me-1"></i>High</span>
+            <div class="progress-slim"><div class="bar" id="dashProductivityBar" style="width:0%;background:var(--accent);" data-width="78"></div></div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 fade-in-up delay-3">
+        <div class="stat-card yellow">
+            <div class="stat-icon yellow"><i class="fas fa-brain"></i></div>
+            <div class="stat-label">Stress Level</div>
+            <div class="stat-value yellow" id="dashStress">Moderate</div>
+            <span class="stat-badge flat" id="dashStressBadge">Score: 6 / 10</span>
+            <div class="progress-slim"><div class="bar" id="dashStressBar" style="width:0%;background:var(--warning);" data-width="60"></div></div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 fade-in-up delay-4">
+        <div class="stat-card purple">
+            <div class="stat-icon purple"><i class="fas fa-star"></i></div>
+            <div class="stat-label">Predicted Marks</div>
+            <div class="stat-value purple" id="dashMarks">72%</div>
+            <span class="stat-badge flat" id="dashMarksBadge">Grade: B</span>
+            <div class="progress-slim"><div class="bar" id="dashMarksBar" style="width:0%;background:var(--purple);" data-width="72"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Main Row ── -->
+<div class="row g-3 mb-4">
+    <!-- Study Chart -->
+    <div class="col-xl-8 fade-in-up delay-2">
+        <div class="card-glass p-4 h-100">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Study vs Productivity Trend</div>
+                    <div class="section-sub">Weekly study hours vs productivity score</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="pill blue">This Week</span>
+                </div>
+            </div>
+            <div id="studyChart" style="height: 280px;"></div>
+        </div>
+    </div>
+
+    <!-- AI Recommendations -->
+    <div class="col-xl-4 fade-in-up delay-3">
+        <div class="card-glass p-4 h-100" style="display:flex;flex-direction:column;">
+            <div class="section-header" style="flex-shrink:0;">
+                <div>
+                    <div class="section-title">AI Recommendations</div>
+                    <div class="section-sub">Personalized insights</div>
+                </div>
+                <span class="pill blue">4 Tips</span>
+            </div>
+            <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                <div class="suggestion-item warn">
+                    <div class="suggestion-icon warn"><i class="fas fa-mobile-screen"></i></div>
+                    <div class="suggestion-text">Reduce daily screen time by <strong>1 hour</strong> to lower stress indicators.</div>
+                </div>
+                <div class="suggestion-item good">
+                    <div class="suggestion-icon good"><i class="fas fa-check"></i></div>
+                    <div class="suggestion-text">Attendance is healthy. Keep attending regularly to stay above 75%.</div>
+                </div>
+                <div class="suggestion-item info">
+                    <div class="suggestion-icon info"><i class="fas fa-book"></i></div>
+                    <div class="suggestion-text">Add <strong>30 min</strong> of focused revision for Machine Learning this week.</div>
+                </div>
+                <div class="suggestion-item alert">
+                    <div class="suggestion-icon alert"><i class="fas fa-moon"></i></div>
+                    <div class="suggestion-text">Sleep schedule is irregular. Aim for a consistent <strong>10:30 PM</strong> bedtime.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Bottom Row ── -->
+<div class="row g-3">
+    <!-- Subject Attendance -->
+    <div class="col-xl-7 fade-in-up delay-3">
+        <div class="card-glass p-4">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Subject-Wise Attendance</div>
+                    <div class="section-sub">Current semester · from OCR data</div>
+                </div>
+                <a href="/attendance" class="btn-ghost" style="font-size:0.78rem;padding:6px 14px;">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark-custom" id="dashAttTable">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Attended</th>
+                            <th>Total</th>
+                            <th>%</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashAttBody">
+                        <!-- Populated by JS -->
+                        <tr id="dashAttLoading">
+                            <td colspan="5" class="text-center py-4" style="color:var(--text-muted);">
+                                <i class="fas fa-circle-notch fa-spin me-2"></i>Loading attendance…
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Plan Quick View -->
+    <div class="col-xl-5 fade-in-up delay-4">
+        <div class="card-glass p-4 h-100">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Today's Classes</div>
+                    <div class="section-sub" id="dashTodayLabel">Loading…</div>
+                </div>
+                <a href="/planner" class="btn-ghost" style="font-size:0.78rem;padding:6px 14px;">Full Plan</a>
+            </div>
+            <div class="timeline-container" id="dashTimeline">
+                <div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0;">
+                    <i class="fas fa-circle-notch fa-spin me-2"></i>Loading timetable…
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Subjects icon map ──────────────────────────────────────────────
+const subjectIcons = {
+    'Data Structures':                       { icon: 'fa-sitemap',   color: 'text-accent' },
+    'Machine Learning with Python':          { icon: 'fa-robot',     color: 'text-accent' },
+    'Artificial Intelligence Generative AI': { icon: 'fa-microchip', color: 'text-purple' },
+    'Object Oriented Programming with Java': { icon: 'fa-coffee',    color: 'text-warning' },
+    'Internet of Things':                    { icon: 'fa-wifi',      color: 'text-success' },
+    'Verbal and Quantitative Reasoning':     { icon: 'fa-book',      color: 'text-sub' },
+    'Operating Systems':                     { icon: 'fa-server',    color: 'text-success' },
+    'Data Communication and Networking':     { icon: 'fa-network-wired', color: 'text-accent' },
+    'Training-I':                            { icon: 'fa-dumbbell',  color: 'text-warning' },
+};
+
+function subjectShort(name) {
+    const shorts = {
+        'Data Structures': 'Data Structures',
+        'Machine Learning with Python': 'ML with Python',
+        'Artificial Intelligence Generative AI': 'AI GenAI',
+        'Object Oriented Programming with Java': 'OOP with Java',
+        'Internet of Things': 'IoT',
+        'Verbal and Quantitative Reasoning': 'VQR',
+        'Operating Systems': 'Operating Systems',
+        'Data Communication and Networking': 'DCN',
+        'Training-I': 'Training-I',
+    };
+    return shorts[name] || name;
+}
+
+// ── 1. Fetch timetable → Today's Classes timeline ──────────────────
+const ATTENDANCE_KEY = 'smartStudent.latestAttendance';
+const PREDICTION_KEY = 'smartStudent.latestPrediction';
+
+function readStoredJson(key) {
+    try {
+        return JSON.parse(localStorage.getItem(key) || 'null');
+    } catch (e) {
+        return null;
+    }
+}
+
+(async function loadToday() {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const today = days[new Date().getDay()];
+    document.getElementById('dashTodayLabel').textContent = today + ' · From your timetable';
+
+    const tl = document.getElementById('dashTimeline');
+    try {
+        const res  = await fetch('/api/timetable');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        const todayClasses = data.filter(r => r.day === today)
+            .sort((a, b) => a.time_start.localeCompare(b.time_start));
+
+        if (todayClasses.length === 0) {
+            tl.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0;">
+                <i class="fas fa-mug-hot me-2"></i>No classes today — enjoy your free day!
+            </div>`;
+            return;
+        }
+
+        tl.innerHTML = todayClasses.map((c, i) => {
+            const m = subjectIcons[c.subject_name] || { icon: 'fa-graduation-cap', color: 'text-accent' };
+            const label = c.subject_type === 'PR' ? 'Lab' : 'Lecture';
+            const dotType = c.subject_type === 'PR' ? 'break' : 'academic';
+            return `
+            <div class="timeline-item" style="animation-delay:${0.1 + i * 0.1}s;">
+                <div class="timeline-dot ${dotType}"></div>
+                <div class="timeline-time">${c.time_start} – ${c.time_end}</div>
+                <div class="timeline-activity">
+                    <i class="fas ${m.icon} me-1 ${m.color}" style="font-size:0.8rem;"></i>
+                    ${subjectShort(c.subject_name)} <span style="color:var(--text-muted);font-size:0.78rem;">(${label})</span>
+                </div>
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">
+                    <i class="fas fa-location-dot me-1"></i>${c.room || '—'}
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        tl.innerHTML = `<div style="color:var(--danger);font-size:0.82rem;">Could not load timetable.</div>`;
+    }
+})();
+
+// ── 2. OCR attendance → Subject table + KPI ──────────────────────
+(async function loadAttendance() {
+    // Use the hardcoded real data as demo (same fallback as /api/ocr)
+    const demoSubjects = [
+        {code:"E1PY201B", name:"Object Oriented Programming with Java", type:"PP", attended:13, total:21, percentage:61.9},
+        {code:"E1PY201B", name:"Object Oriented Programming with Java", type:"PR", attended:11, total:18, percentage:61.1},
+        {code:"E1PY203B", name:"Data Structures",                       type:"PP", attended:25, total:31, percentage:80.6},
+        {code:"E1PY203B", name:"Data Structures",                       type:"PR", attended:14, total:22, percentage:63.6},
+        {code:"E1PY206T", name:"Data Communication and Networking",     type:"PP", attended:14, total:18, percentage:77.8},
+        {code:"E1PY207T", name:"Operating Systems",                     type:"PP", attended:22, total:26, percentage:84.6},
+        {code:"01PA202L", name:"Verbal and Quantitative Reasoning",     type:"PR", attended:35, total:40, percentage:87.5},
+        {code:"E1PY210B", name:"Machine Learning with Python",          type:"PP", attended:12, total:18, percentage:66.7},
+        {code:"E1PY210B", name:"Machine Learning with Python",          type:"PR", attended:14, total:18, percentage:77.8},
+        {code:"E1PY213T", name:"Artificial Intelligence Generative AI", type:"PP", attended:21, total:28, percentage:75.0},
+        {code:"E1PY217T", name:"Internet of Things",                    type:"PP", attended:18, total:28, percentage:64.3},
+        {code:"E1PY218L", name:"Training-I",                            type:"PR", attended:10, total:12, percentage:83.3},
+    ];
+
+    const saved = readStoredJson(ATTENDANCE_KEY);
+    const sourceSubjects = saved && Array.isArray(saved.subjects) && saved.subjects.length
+        ? saved.subjects
+        : demoSubjects;
+    const normalizedSubjects = sourceSubjects.map(s => {
+        const attended = Number(s.attended) || 0;
+        const total = Number(s.total) || 0;
+        return {
+            code: s.code,
+            name: s.name || s.code,
+            type: s.type || 'PP',
+            attended,
+            total,
+            percentage: total > 0 ? Math.round((attended / total) * 1000) / 10 : 0
+        };
+    });
+
+    // Show top 6 subjects (PP only preferred)
+    const ppOnly = normalizedSubjects.filter(s => s.type === 'PP');
+    const display = (ppOnly.length ? ppOnly : normalizedSubjects).slice(0, 6);
+
+    const totalAtt = normalizedSubjects.reduce((s, r) => s + r.attended, 0);
+    const totalCls = normalizedSubjects.reduce((s, r) => s + r.total, 0);
+    const overall  = totalCls > 0 ? Math.round(totalAtt / totalCls * 100) : 0;
+
+    // Update KPI
+    document.getElementById('dashOverallPct').textContent = overall + '%';
+    const bar = document.getElementById('dashAttBar');
+    bar.setAttribute('data-width', overall);
+    setTimeout(() => { bar.style.width = overall + '%'; }, 400);
+
+    const badge = document.getElementById('dashAttBadge');
+    if (overall >= 85) {
+        badge.className = 'stat-badge up';
+        badge.innerHTML = '<i class="fas fa-arrow-up me-1"></i>Excellent';
+    } else if (overall >= 75) {
+        badge.className = 'stat-badge flat';
+        badge.textContent = 'Safe Zone';
+    } else {
+        badge.className = 'stat-badge down';
+        badge.innerHTML = '<i class="fas fa-arrow-down me-1"></i>At Risk';
+    }
+
+    // Build table
+    const tbody = document.getElementById('dashAttBody');
+    tbody.innerHTML = display.map(s => {
+        const m = subjectIcons[s.name] || { icon: 'fa-book', color: 'text-sub' };
+        let pillClass = 'green', pillText = 'Safe';
+        if (s.percentage < 75)      { pillClass = 'red';    pillText = 'At Risk'; }
+        else if (s.percentage < 85) { pillClass = 'yellow'; pillText = 'Warning'; }
+        let pctColor = s.percentage >= 85 ? 'text-success' : s.percentage >= 75 ? 'text-warning' : 'text-danger';
+        return `
+        <tr>
+            <td>
+                <i class="fas ${m.icon} me-2 ${m.color}" style="font-size:0.8rem;"></i>
+                ${subjectShort(s.name)}
+            </td>
+            <td>${s.attended}</td>
+            <td>${s.total}</td>
+            <td><strong class="${pctColor}">${s.percentage}%</strong></td>
+            <td><span class="pill ${pillClass}">${pillText}</span></td>
+        </tr>`;
+    }).join('');
+})();
+
+// ── 3. Plotly Chart — Study vs Productivity ─────────────────────
+(function loadPredictionSummary() {
+    const saved = readStoredJson(PREDICTION_KEY);
+    if (!saved || !saved.result) return;
+
+    const result = saved.result;
+    const marks = Number(result.marks) || 0;
+    const stress = String(result.stress || 'Moderate Stress');
+    const productivity = String(result.productivity || 'Medium Productivity');
+    const grade = marks >= 85 ? 'A' : marks >= 70 ? 'B' : marks >= 55 ? 'C' : 'D';
+
+    document.getElementById('dashMarks').textContent = marks.toFixed(1).replace('.0', '') + '%';
+    document.getElementById('dashMarksBadge').textContent = 'Grade: ' + grade;
+    const marksBar = document.getElementById('dashMarksBar');
+    marksBar.setAttribute('data-width', Math.min(100, marks));
+    setTimeout(() => { marksBar.style.width = Math.min(100, marks) + '%'; }, 400);
+
+    const stressLabel = stress.replace(' Stress', '');
+    const stressScore = stress.includes('High') ? 85 : stress.includes('Low') ? 25 : 60;
+    document.getElementById('dashStress').textContent = stressLabel;
+    document.getElementById('dashStressBadge').textContent = stress.includes('High') ? 'Needs rest' : stress.includes('Low') ? 'Balanced' : 'Score: 6 / 10';
+    const stressBar = document.getElementById('dashStressBar');
+    stressBar.setAttribute('data-width', stressScore);
+    setTimeout(() => { stressBar.style.width = stressScore + '%'; }, 400);
+
+    const prodLabel = productivity.replace(' Productivity', '');
+    const prodScore = productivity.includes('High') ? 85 : productivity.includes('Low') ? 35 : 65;
+    document.getElementById('dashProductivity').innerHTML = prodScore + '<span style="font-size:1rem">/100</span>';
+    document.getElementById('dashProductivityBadge').innerHTML = productivity.includes('High')
+        ? '<i class="fas fa-arrow-up me-1"></i>High'
+        : prodLabel;
+    const prodBar = document.getElementById('dashProductivityBar');
+    prodBar.setAttribute('data-width', prodScore);
+    setTimeout(() => { prodBar.style.width = prodScore + '%'; }, 400);
+})();
+
+const chartData = [
+    {
+        name: 'Study Hours',
+        x: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        y: [3, 4.5, 2.5, 5, 4, 6.5, 5],
+        type: 'scatter', mode: 'lines+markers',
+        line: { color: '#38BDF8', width: 2.5, shape: 'spline' },
+        marker: { size: 7, color: '#38BDF8' }
+    },
+    {
+        name: 'Productivity',
+        x: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        y: [62, 78, 45, 82, 72, 91, 86],
+        type: 'bar', yaxis: 'y2',
+        marker: { color: 'rgba(34,197,94,0.22)', line: { color: 'rgba(34,197,94,0.6)', width: 1 } }
+    }
+];
+const layout = {
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor:  'rgba(0,0,0,0)',
+    font: { color: '#94A3B8', family: 'Inter', size: 11 },
+    margin: { t: 10, l: 40, r: 50, b: 36 },
+    xaxis: {
+        gridcolor: 'rgba(255,255,255,0.05)',
+        linecolor: 'rgba(255,255,255,0.08)',
+        tickfont:  { color: '#94A3B8', size: 11 },
+        tickcolor: 'rgba(255,255,255,0.2)'
+    },
+    yaxis: {
+        gridcolor: 'rgba(255,255,255,0.05)',
+        tickfont:  { color: '#94A3B8', size: 10 },
+        title: { text: 'Study Hrs', font: { size: 10, color: '#64748B' } }
+    },
+    yaxis2: {
+        overlaying: 'y', side: 'right', showgrid: false,
+        tickfont: { color: '#94A3B8', size: 10 },
+        title: { text: 'Productivity', font: { size: 10, color: '#64748B' } }
+    },
+    legend: { orientation: 'h', y: -0.18, font: { size: 11, color: '#94A3B8' } },
+    hovermode: 'x unified'
+};
+Plotly.newPlot('studyChart', chartData, layout, { displayModeBar: false, responsive: true });
+</script>
+{% endblock %}

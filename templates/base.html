@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Smart Student Life Optimizer — AI-powered academic productivity and analytics dashboard.">
+    <title>{% block title %}Smart Student Life Optimizer{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+<div id="wrapper">
+
+    <!-- ── Sidebar ── -->
+    <aside id="sidebar-wrapper">
+        <div class="sidebar-logo">
+            <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+            <div class="logo-text">
+                Smart Optimizer
+                <span>v1.0 &nbsp;·&nbsp; AI Powered</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main</div>
+            <a href="/" class="sidebar-link" id="nav-dashboard">
+                <div class="nav-icon"><i class="fas fa-house"></i></div>
+                Dashboard
+            </a>
+            <a href="/predictions" class="sidebar-link" id="nav-predictions">
+                <div class="nav-icon"><i class="fas fa-brain"></i></div>
+                AI Predictions
+            </a>
+            <a href="/analytics" class="sidebar-link" id="nav-analytics">
+                <div class="nav-icon"><i class="fas fa-chart-line"></i></div>
+                Analytics
+            </a>
+
+            <div class="nav-section-label" style="margin-top:16px;">Academic</div>
+            <a href="/attendance" class="sidebar-link" id="nav-attendance">
+                <div class="nav-icon"><i class="fas fa-calendar-check"></i></div>
+                Attendance
+            </a>
+            <a href="/planner" class="sidebar-link" id="nav-planner">
+                <div class="nav-icon"><i class="fas fa-calendar-days"></i></div>
+                Smart Planner
+            </a>
+            <a href="/timetable" class="sidebar-link" id="nav-timetable">
+                <div class="nav-icon"><i class="fas fa-table"></i></div>
+                Timetable
+            </a>
+            <a href="/lifestyle" class="sidebar-link" id="nav-lifestyle">
+                <div class="nav-icon"><i class="fas fa-heart-pulse"></i></div>
+                Lifestyle Tracker
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="version-badge">AI Active</div>
+            <div>Smart Student Life Optimizer</div>
+        </div>
+    </aside>
+
+    <!-- ── Page Content ── -->
+    <div id="page-content-wrapper">
+
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div id="menu-toggle"><i class="fas fa-bars" style="font-size:0.95rem;"></i></div>
+                <div>
+                    <div class="topbar-title">{% block header %}Dashboard{% endblock %}</div>
+                    <div class="topbar-subtitle">{% block subheader %}Smart Student Life Optimizer{% endblock %}</div>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-btn" title="Notifications">
+                    <i class="fas fa-bell" style="font-size:0.9rem;"></i>
+                    <span class="status-dot"></span>
+                </div>
+                <div class="topbar-btn" title="System Status">
+                    <i class="fas fa-circle-check" style="font-size:0.9rem; color: var(--success);"></i>
+                </div>
+                <div class="user-avatar" title="Student Profile">S</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
+
+    </div><!-- /page-content-wrapper -->
+</div><!-- /wrapper -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

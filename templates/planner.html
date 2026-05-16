@@ -1,0 +1,603 @@
+{% extends "base.html" %}
+{% block title %}Smart Planner — Smart Student Optimizer{% endblock %}
+{% block header %}Smart Planner Engine{% endblock %}
+{% block subheader %}AI-optimized daily schedule based on your stress and productivity levels{% endblock %}
+
+{% block content %}
+
+<div class="row g-3">
+    <!-- ── Control Panel ── -->
+    <div class="col-xl-4 fade-in-up delay-1">
+        <div class="card-glass p-4 h-100" style="display:flex;flex-direction:column;gap:20px;">
+
+            <!-- Day strip -->
+            <div>
+                <div class="planner-label">Day of Week</div>
+                <div class="d-flex gap-2 flex-wrap" id="dayGroup">
+                    <button type="button" class="day-pill" data-val="Monday">Mon</button>
+                    <button type="button" class="day-pill" data-val="Tuesday">Tue</button>
+                    <button type="button" class="day-pill" data-val="Wednesday">Wed</button>
+                    <button type="button" class="day-pill" data-val="Thursday">Thu</button>
+                    <button type="button" class="day-pill" data-val="Sunday">Sun</button>
+                </div>
+            </div>
+
+            <!-- Wake / Sleep times -->
+            <div class="d-flex gap-3">
+                <div style="flex:1;">
+                    <div class="planner-label">⏰ Wake Up</div>
+                    <input type="time" id="wakeTime" value="07:00"
+                        style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);
+                               border-radius:9px;color:var(--text-primary);padding:8px 10px;
+                               font-size:.85rem;font-weight:600;outline:none;color-scheme:dark;
+                               transition:border-color .2s;"
+                        onfocus="this.style.borderColor='var(--accent)'"
+                        onblur="this.style.borderColor='var(--border)'">
+                </div>
+                <div style="flex:1;">
+                    <div class="planner-label">🌙 Sleep By</div>
+                    <input type="time" id="sleepTime" value="23:00"
+                        style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);
+                               border-radius:9px;color:var(--text-primary);padding:8px 10px;
+                               font-size:.85rem;font-weight:600;outline:none;color-scheme:dark;
+                               transition:border-color .2s;"
+                        onfocus="this.style.borderColor='var(--accent)'"
+                        onblur="this.style.borderColor='var(--border)'">
+                </div>
+            </div>
+
+            <!-- Stress level -->
+            <div>
+                <div class="planner-label">How stressed are you today?</div>
+                <div class="d-flex gap-2" id="stressGroup">
+                    <button type="button" class="level-btn active-level" data-val="Low Stress" style="--c:#4ade80;">
+                        <span class="level-emoji">😌</span>
+                        <span class="level-text">Low</span>
+                    </button>
+                    <button type="button" class="level-btn" data-val="Moderate Stress" style="--c:#fbbf24;">
+                        <span class="level-emoji">😐</span>
+                        <span class="level-text">Moderate</span>
+                    </button>
+                    <button type="button" class="level-btn" data-val="High Stress" style="--c:#f87171;">
+                        <span class="level-emoji">😰</span>
+                        <span class="level-text">High</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Productivity -->
+            <div>
+                <div class="planner-label">Productivity level?</div>
+                <div class="d-flex gap-2" id="prodGroup">
+                    <button type="button" class="level-btn" data-val="Low Productivity" style="--c:#f87171;">
+                        <span class="level-emoji">🥱</span>
+                        <span class="level-text">Low</span>
+                    </button>
+                    <button type="button" class="level-btn active-level" data-val="Medium Productivity" style="--c:#fbbf24;">
+                        <span class="level-emoji">⚡</span>
+                        <span class="level-text">Medium</span>
+                    </button>
+                    <button type="button" class="level-btn" data-val="High Productivity" style="--c:#4ade80;">
+                        <span class="level-emoji">🚀</span>
+                        <span class="level-text">High</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="d-flex gap-3 flex-wrap" style="padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.025);">
+                <div class="d-flex align-items-center gap-2" style="font-size:.72rem;color:var(--text-muted);">
+                    <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;"></span>Academic
+                </div>
+                <div class="d-flex align-items-center gap-2" style="font-size:.72rem;color:var(--text-muted);">
+                    <span style="width:8px;height:8px;border-radius:50%;background:var(--warning);flex-shrink:0;"></span>Breaks
+                </div>
+                <div class="d-flex align-items-center gap-2" style="font-size:.72rem;color:var(--text-muted);">
+                    <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;"></span>Wellness
+                </div>
+            </div>
+
+            <!-- Custom Activities -->
+            <div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="planner-label" style="margin-bottom:0;">Custom Activities</div>
+                    <button onclick="toggleCustomForm()" id="toggleCustomBtn"
+                        style="font-size:.68rem;padding:3px 9px;border-radius:6px;border:1px solid var(--border);
+                               background:rgba(255,255,255,.04);color:var(--accent);cursor:pointer;transition:all .15s;">
+                        <i class="fas fa-plus me-1"></i>Add
+                    </button>
+                </div>
+
+                <!-- Add form (hidden by default) -->
+                <div id="customForm" style="display:none;background:rgba(255,255,255,.03);border-radius:10px;padding:10px;border:1px solid var(--border);margin-bottom:8px;">
+                    <div class="d-flex gap-2 mb-2">
+                        <div style="flex:1;">
+                            <div style="font-size:.6rem;color:var(--text-muted);margin-bottom:3px;">TIME</div>
+                            <input type="time" id="customTime" value="09:00"
+                                style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:7px;
+                                       color:var(--text-primary);padding:5px 8px;font-size:.78rem;outline:none;color-scheme:dark;">
+                        </div>
+                        <div style="width:64px;">
+                            <div style="font-size:.6rem;color:var(--text-muted);margin-bottom:3px;">MINS</div>
+                            <input type="number" id="customDur" value="45" min="5" max="240"
+                                style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:7px;
+                                       color:var(--text-primary);padding:5px 6px;font-size:.78rem;outline:none;text-align:center;">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div style="font-size:.6rem;color:var(--text-muted);margin-bottom:3px;">ACTIVITY NAME</div>
+                        <input type="text" id="customName" placeholder="e.g. Study DS Chapter 5…"
+                            style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:7px;
+                                   color:var(--text-primary);padding:5px 8px;font-size:.78rem;outline:none;"
+                            onkeydown="if(event.key==='Enter')addCustomActivity()">
+                    </div>
+                    <div class="d-flex gap-2 mb-2" id="customTypeGroup">
+                        <button type="button" class="ctype-btn active-ctype" data-val="academic" style="--cc:#38bdf8;">📚 Study</button>
+                        <button type="button" class="ctype-btn" data-val="break"    style="--cc:#fbbf24;">☕ Break</button>
+                        <button type="button" class="ctype-btn" data-val="lifestyle" style="--cc:#4ade80;">🌿 Wellness</button>
+                    </div>
+                    <button onclick="addCustomActivity()"
+                        style="width:100%;padding:6px;border-radius:7px;border:none;background:var(--accent-dim);
+                               color:var(--accent);font-size:.75rem;font-weight:700;cursor:pointer;border:1px solid rgba(56,189,248,.2);">
+                        <i class="fas fa-plus me-1"></i>Add to Plan
+                    </button>
+                </div>
+
+                <!-- List of added custom items -->
+                <div id="customList" style="display:flex;flex-direction:column;gap:4px;max-height:140px;overflow-y:auto;"></div>
+            </div>
+
+            <button id="generateBtn" onclick="generateSchedule()"
+                style="margin-top:auto;padding:11px;border-radius:10px;border:none;
+                       background:linear-gradient(135deg,var(--accent),#6366f1);
+                       color:#fff;font-weight:700;font-size:.88rem;cursor:pointer;
+                       transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fas fa-calendar-plus"></i> Generate Smart Schedule
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Timeline ── -->
+    <div class="col-xl-8 fade-in-up delay-2">
+        <div class="card-glass p-4 h-100" style="min-height:400px;">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <div class="section-title">
+                        Optimized Timeline
+                        <span style="color:var(--accent);margin-left:6px;" id="displayDay">—</span>
+                    </div>
+                    <div class="section-sub" id="displayMode">Select parameters and generate</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn-ghost" onclick="clearPlan()" id="clearPlanBtn" style="display:none;font-size:.75rem;padding:5px 10px;color:var(--danger);border-color:rgba(248,113,113,.3)">
+                        <i class="fas fa-trash me-1"></i>Clear
+                    </button>
+                    <button class="btn-ghost" onclick="window.print()" style="font-size:.78rem;padding:6px 12px;">
+                        <i class="fas fa-print me-1"></i>Print
+                    </button>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="timelinePlaceholder" class="text-center" style="padding:60px 20px;">
+                <div style="font-size:3rem;margin-bottom:12px;opacity:.3;">📅</div>
+                <div style="font-weight:700;font-size:.9rem;color:var(--text-muted);margin-bottom:6px;">No schedule generated yet</div>
+                <div style="font-size:.78rem;color:var(--text-muted);opacity:.7;">Pick your day, stress level and productivity<br>then click Generate Smart Schedule</div>
+            </div>
+
+            <!-- Timeline + summary bar -->
+            <div class="d-none" id="timelineContainer">
+                <div id="scheduleSummary" class="d-flex gap-3 mb-3 flex-wrap" style="padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.03);"></div>
+                <div id="scheduleRows"></div>
+                <button onclick="addSlot()" style="margin-top:10px;width:100%;padding:8px;border-radius:9px;border:1px dashed rgba(255,255,255,.15);background:rgba(255,255,255,.02);color:var(--text-muted);font-size:.75rem;font-weight:600;cursor:pointer;transition:all .18s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='rgba(255,255,255,.15)';this.style.color='var(--text-muted)'">
+                    <i class="fas fa-plus me-2"></i>Add Slot
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.planner-label {
+    font-size: .65rem; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-muted); font-weight: 700; margin-bottom: 8px;
+}
+/* Day pills */
+.day-pill {
+    flex: 1; padding: 8px 4px; border-radius: 9px; border: 1px solid var(--border);
+    background: rgba(255,255,255,.03); color: var(--text-muted);
+    font-size: .78rem; font-weight: 700; cursor: pointer; transition: all .18s;
+}
+.day-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.day-pill.active-day { border-color: var(--accent); color: var(--accent); background: var(--accent-dim);
+                       box-shadow: 0 0 10px rgba(56,189,248,.15); }
+/* Level buttons */
+.level-btn {
+    flex: 1; padding: 10px 4px; border-radius: 10px; border: 1px solid var(--border);
+    background: rgba(255,255,255,.03); color: var(--text-muted);
+    font-size: .75rem; font-weight: 600; cursor: pointer; transition: all .18s;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.level-btn:hover  { border-color: var(--c); background: color-mix(in srgb,var(--c) 8%,transparent); }
+.level-btn.active-level { border-color: var(--c); color: var(--c);
+                           background: color-mix(in srgb,var(--c) 12%,transparent);
+                           box-shadow: 0 0 10px color-mix(in srgb,var(--c) 20%,transparent); }
+.level-emoji { font-size: 1.3rem; line-height: 1; }
+.level-text  { font-size: .7rem; font-weight: 700; }
+/* Generate hover */
+#generateBtn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(56,189,248,.25); }
+/* Timeline items */
+.timeline-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+    animation: fadeSlideIn .35s ease both;
+}
+.timeline-item:last-child { border-bottom: none; }
+@keyframes fadeSlideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+.timeline-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+}
+.timeline-dot.academic  { background: var(--accent); box-shadow: 0 0 6px rgba(56,189,248,.4); }
+.timeline-dot.break     { background: var(--warning); box-shadow: 0 0 6px rgba(251,191,36,.4); }
+.timeline-dot.lifestyle { background: var(--success); box-shadow: 0 0 6px rgba(52,211,153,.4); }
+.timeline-time {
+    font-size: .72rem; font-family: monospace; color: var(--text-muted);
+    min-width: 90px; padding-top: 2px; flex-shrink: 0;
+}
+.timeline-activity {
+    font-size: .83rem; font-weight: 600; color: var(--text-primary); line-height: 1.4;
+}
+@media print {
+    #sidebar-wrapper, .topbar, .col-xl-4, #menu-toggle { display: none !important; }
+    #page-content-wrapper { margin-left: 0; }
+}
+/* Custom type buttons */
+.ctype-btn {
+    flex: 1; padding: 5px 4px; border-radius: 7px; border: 1px solid var(--border);
+    background: rgba(255,255,255,.02); color: var(--text-muted);
+    font-size: .68rem; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.ctype-btn:hover  { border-color: var(--cc); color: var(--cc); }
+.ctype-btn.active-ctype { border-color: var(--cc); color: var(--cc); background: color-mix(in srgb, var(--cc) 12%, transparent); }
+/* Custom item chip */
+.custom-chip {
+    display:flex; align-items:center; gap:6px; padding:5px 8px;
+    border-radius:7px; background:rgba(255,255,255,.04); border:1px solid var(--border);
+    font-size:.7rem; color:var(--text-primary);
+}
+/* Timeline edit styles */
+.tl-edit-btn { background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:5px;transition:background .15s;opacity:.5; }
+.tl-edit-btn:hover { opacity:1;background:rgba(255,255,255,.08); }
+.tl-inp { background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);padding:3px 7px;font-size:.75rem;outline:none; }
+.tl-inp:focus { border-color:var(--accent); }
+.tl-type-sel { background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);padding:3px 6px;font-size:.72rem;outline:none;color-scheme:dark; }
+</style>
+
+<script>
+let customActivities = [];
+
+function toggleCustomForm() {
+    const f = document.getElementById('customForm');
+    const open = f.style.display !== 'none';
+    f.style.display = open ? 'none' : '';
+    document.getElementById('toggleCustomBtn').innerHTML = open
+        ? '<i class="fas fa-plus me-1"></i>Add'
+        : '<i class="fas fa-times me-1"></i>Close';
+    if (!open) document.getElementById('customName').focus();
+}
+
+document.getElementById('customTypeGroup').addEventListener('click', e => {
+    const btn = e.target.closest('.ctype-btn');
+    if (!btn) return;
+    document.querySelectorAll('.ctype-btn').forEach(b => b.classList.remove('active-ctype'));
+    btn.classList.add('active-ctype');
+});
+
+function addCustomActivity() {
+    const time = document.getElementById('customTime').value;
+    const dur  = parseInt(document.getElementById('customDur').value) || 45;
+    const name = document.getElementById('customName').value.trim();
+    const type = document.querySelector('.ctype-btn.active-ctype')?.dataset.val || 'academic';
+    if (!name) { document.getElementById('customName').focus(); return; }
+
+    // Compute end time
+    const [h, m] = time.split(':').map(Number);
+    const endMin = h*60 + m + dur;
+    const endStr = `${String(Math.floor(endMin/60)).padStart(2,'0')}:${String(endMin%60).padStart(2,'0')}`;
+
+    const item = { time_start: time, time_end: endStr, name, type,
+                   display: `${time} – ${endStr}` };
+    customActivities.push(item);
+    renderCustomList();
+
+    document.getElementById('customName').value = '';
+}
+
+function removeCustom(idx) {
+    customActivities.splice(idx, 1);
+    renderCustomList();
+}
+
+function renderCustomList() {
+    const typeColor = { academic:'#38bdf8', break:'#fbbf24', lifestyle:'#4ade80' };
+    const typeIcon  = { academic:'📚', break:'☕', lifestyle:'🌿' };
+    document.getElementById('customList').innerHTML = customActivities.map((a, i) => `
+        <div class="custom-chip">
+            <span style="color:${typeColor[a.type]};">${typeIcon[a.type]}</span>
+            <span style="font-family:monospace;font-size:.65rem;color:var(--text-muted);flex-shrink:0;">${a.display}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.name}</span>
+            <button onclick="removeCustom(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:.7rem;padding:0;flex-shrink:0;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+// ── Auto-select today ──
+const dayMap = {0:'Sunday',1:'Monday',2:'Tuesday',3:'Wednesday',4:'Thursday',5:'Friday',6:'Saturday'};
+const today  = dayMap[new Date().getDay()];
+const pills  = document.querySelectorAll('#dayGroup .day-pill');
+
+let todayPillFound = false;
+pills.forEach(p => {
+    if (p.dataset.val === today) { p.classList.add('active-day'); todayPillFound = true; }
+});
+if (!todayPillFound) pills[0].classList.add('active-day'); // fallback Monday
+
+// ── Day pill toggle ──
+document.getElementById('dayGroup').addEventListener('click', e => {
+    const btn = e.target.closest('.day-pill');
+    if (!btn) return;
+    pills.forEach(p => p.classList.remove('active-day'));
+    btn.classList.add('active-day');
+});
+
+// ── Level button toggle ──
+['stressGroup','prodGroup'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+        const btn = e.target.closest('.level-btn');
+        if (!btn) return;
+        document.querySelectorAll(`#${id} .level-btn`).forEach(b => b.classList.remove('active-level'));
+        btn.classList.add('active-level');
+    });
+});
+
+// ── Live schedule state ──────────────────────────────────────
+let liveSchedule = [];
+const iconMap  = { academic:'fa-book-open', break:'fa-mug-hot', lifestyle:'fa-heart-pulse' };
+const colorMap = { academic:'accent', break:'warning', lifestyle:'success' };
+const typeColor = { academic:'#38bdf8', break:'#fbbf24', lifestyle:'#4ade80' };
+
+// ── Persistence ──────────────────────────────────────────────
+function saveState() {
+    const day    = document.querySelector('#dayGroup .active-day')?.dataset.val || '';
+    const stress = document.querySelector('#stressGroup .active-level')?.dataset.val || '';
+    const prod   = document.querySelector('#prodGroup .active-level')?.dataset.val   || '';
+    localStorage.setItem('planner_schedule', JSON.stringify(liveSchedule));
+    localStorage.setItem('planner_meta', JSON.stringify({
+        day, stress, prod,
+        wake:  document.getElementById('wakeTime').value,
+        sleep: document.getElementById('sleepTime').value,
+        savedAt: new Date().toLocaleString('en-IN', { hour:'2-digit', minute:'2-digit', day:'numeric', month:'short' })
+    }));
+}
+
+function restoreState() {
+    const saved    = localStorage.getItem('planner_schedule');
+    const metaRaw  = localStorage.getItem('planner_meta');
+    if (!saved || !metaRaw) return;
+    try {
+        liveSchedule = JSON.parse(saved);
+        const meta   = JSON.parse(metaRaw);
+
+        // Restore selectors
+        if (meta.day) {
+            document.querySelectorAll('.day-pill').forEach(p => {
+                p.classList.toggle('active-day', p.dataset.val === meta.day);
+            });
+        }
+        if (meta.stress) {
+            document.querySelectorAll('#stressGroup .level-btn').forEach(b => {
+                b.classList.toggle('active-level', b.dataset.val === meta.stress);
+            });
+        }
+        if (meta.prod) {
+            document.querySelectorAll('#prodGroup .level-btn').forEach(b => {
+                b.classList.toggle('active-level', b.dataset.val === meta.prod);
+            });
+        }
+        if (meta.wake)  document.getElementById('wakeTime').value  = meta.wake;
+        if (meta.sleep) document.getElementById('sleepTime').value = meta.sleep;
+
+        // Show timeline
+        document.getElementById('displayDay').innerText  = meta.day || '—';
+        document.getElementById('displayMode').innerText = meta.stress && meta.prod
+            ? `${meta.stress} · ${meta.prod}` : 'Restored plan';
+        document.getElementById('timelinePlaceholder').classList.add('d-none');
+        document.getElementById('timelineContainer').classList.remove('d-none');
+        document.getElementById('clearPlanBtn').style.display = '';
+
+        // Saved-at badge
+        const sub = document.getElementById('displayMode');
+        sub.innerHTML += ` &nbsp;<span style="font-size:.6rem;padding:2px 7px;border-radius:5px;background:rgba(52,211,153,.12);color:var(--success);">💾 saved ${meta.savedAt}</span>`;
+
+        renderSchedule();
+    } catch(e) { /* corrupt data — ignore */ }
+}
+
+let _clearConfirm = false, _clearTimer = null;
+function clearPlan() {
+    const btn = document.getElementById('clearPlanBtn');
+    if (!_clearConfirm) {
+        // First click — ask for confirmation on the button itself
+        _clearConfirm = true;
+        btn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Sure? Click again';
+        btn.style.background = 'rgba(248,113,113,.15)';
+        _clearTimer = setTimeout(() => {
+            _clearConfirm = false;
+            btn.innerHTML = '<i class="fas fa-trash me-1"></i>Clear';
+            btn.style.background = '';
+        }, 3000);
+        return;
+    }
+    // Second click — execute clear
+    clearTimeout(_clearTimer);
+    _clearConfirm = false;
+    localStorage.removeItem('planner_schedule');
+    localStorage.removeItem('planner_meta');
+    liveSchedule = [];
+    document.getElementById('timelineContainer').classList.add('d-none');
+    document.getElementById('timelinePlaceholder').classList.remove('d-none');
+    btn.style.display = 'none';
+    btn.innerHTML = '<i class="fas fa-trash me-1"></i>Clear';
+    btn.style.background = '';
+    document.getElementById('displayDay').innerText  = '—';
+    document.getElementById('displayMode').innerText = 'Select parameters and generate';
+}
+
+function renderSchedule() {
+    saveState();
+    document.getElementById('clearPlanBtn').style.display = '';
+    // Summary
+    const mins = { academic:0, break:0, lifestyle:0 };
+    liveSchedule.forEach(item => {
+        const [ts, te] = item.time.split('–').map(t => { const [h,m]=t.trim().split(':'); return +h*60 + +m; });
+        if (!isNaN(ts) && !isNaN(te) && te > ts) mins[item.type] = (mins[item.type]||0) + (te-ts);
+    });
+    const fmtH = m => m>=60 ? `${(m/60).toFixed(1)}h` : `${m}m`;
+    document.getElementById('scheduleSummary').innerHTML = [
+        ['fa-book-open','accent','Study',mins.academic],
+        ['fa-mug-hot','warning','Breaks',mins.break],
+        ['fa-heart-pulse','success','Wellness',mins.lifestyle]
+    ].map(([ic,cl,lb,mn])=>`
+        <div class="d-flex align-items-center gap-2" style="font-size:.72rem;">
+            <i class="fas ${ic} text-${cl}"></i>
+            <span style="color:var(--text-muted);">${lb}</span>
+            <span style="font-weight:700;color:var(--text-primary);">${fmtH(mn||0)}</span>
+        </div>`).join('<div style="width:1px;height:16px;background:var(--border);"></div>');
+
+    // Rows
+    document.getElementById('scheduleRows').innerHTML = liveSchedule.map((item, i) => {
+        const locked = item.locked;
+        const dot    = `<div class="timeline-dot ${item.type}" style="flex-shrink:0;margin-top:4px;"></div>`;
+        const lockBadge = locked ? `<span style="font-size:.58rem;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.07);color:var(--text-muted);margin-left:6px;"><i class="fas fa-lock"></i> lecture</span>` : '';
+        const custBadge = item.custom && !locked ? `<span style="font-size:.58rem;padding:1px 5px;border-radius:4px;background:rgba(167,139,250,.15);color:#a78bfa;margin-left:6px;">✏️ custom</span>` : '';
+        const actions = locked ? '' : `
+            <div class="ms-auto d-flex gap-1 flex-shrink-0">
+                <button class="tl-edit-btn" onclick="editSlot(${i})" title="Edit"><i class="fas fa-pencil" style="color:var(--accent);font-size:.7rem;"></i></button>
+                <button class="tl-edit-btn" onclick="deleteSlot(${i})" title="Delete"><i class="fas fa-trash" style="color:var(--danger);font-size:.7rem;"></i></button>
+            </div>`;
+
+        return `<div class="timeline-item" id="tl-row-${i}" style="animation-delay:${i*0.04}s;">
+            ${dot}
+            <div style="font-size:.7rem;font-family:monospace;color:var(--text-muted);min-width:90px;flex-shrink:0;padding-top:2px;">
+                <i class="far fa-clock me-1"></i>${item.time}
+            </div>
+            <div class="timeline-activity" style="flex:1;">
+                <i class="fas ${iconMap[item.type]||'fa-star'} me-2 text-${colorMap[item.type]||'accent'}"></i>${item.activity}${lockBadge}${custBadge}
+            </div>
+            ${actions}
+        </div>`;
+    }).join('');
+}
+
+function editSlot(i) {
+    const item = liveSchedule[i];
+    const row  = document.getElementById(`tl-row-${i}`);
+    const [ts, te] = item.time.split('–').map(t => t.trim());
+    row.innerHTML = `
+        <div class="timeline-dot ${item.type}" style="flex-shrink:0;margin-top:10px;"></div>
+        <div class="d-flex flex-wrap gap-2 align-items-center" style="flex:1;">
+            <input class="tl-inp" id="ets-${i}" type="time" value="${ts}" style="width:100px;">
+            <span style="color:var(--text-muted);font-size:.75rem;">–</span>
+            <input class="tl-inp" id="ete-${i}" type="time" value="${te}" style="width:100px;">
+            <input class="tl-inp" id="ean-${i}" type="text" value="${item.activity.replace(/^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]\s*/u,'')}" style="flex:1;min-width:160px;">
+            <select class="tl-type-sel" id="etp-${i}">
+                <option value="academic"  ${item.type==='academic'?'selected':''}>📚 Study</option>
+                <option value="break"     ${item.type==='break'?'selected':''}>☕ Break</option>
+                <option value="lifestyle" ${item.type==='lifestyle'?'selected':''}>🌿 Wellness</option>
+            </select>
+            <button onclick="saveSlot(${i})" class="tl-edit-btn" style="background:var(--accent-dim);color:var(--accent);border:1px solid rgba(56,189,248,.2);border-radius:6px;padding:4px 10px;font-size:.72rem;font-weight:700;opacity:1;"><i class="fas fa-check me-1"></i>Save</button>
+            <button onclick="renderSchedule()" class="tl-edit-btn" style="font-size:.72rem;opacity:.6;"><i class="fas fa-times"></i></button>
+        </div>`;
+}
+
+function saveSlot(i) {
+    const ts   = document.getElementById(`ets-${i}`).value;
+    const te   = document.getElementById(`ete-${i}`).value;
+    const name = document.getElementById(`ean-${i}`).value.trim();
+    const type = document.getElementById(`etp-${i}`).value;
+    if (!name) return;
+    const emoji = { academic:'📝', break:'☕', lifestyle:'🌿' };
+    liveSchedule[i] = { ...liveSchedule[i], time:`${ts} – ${te}`, activity:`${emoji[type]} ${name}`, type };
+    liveSchedule.sort((a,b) => a.time.localeCompare(b.time));
+    renderSchedule();
+}
+
+function deleteSlot(i) {
+    liveSchedule.splice(i, 1);
+    renderSchedule();
+}
+
+function addSlot() {
+    const lastTime = liveSchedule.length ? liveSchedule[liveSchedule.length-1].time.split('–')[1]?.trim() : '09:00';
+    liveSchedule.push({ time:`${lastTime} – ${lastTime}`, activity:'New Activity', type:'academic', locked:false });
+    renderSchedule();
+    editSlot(liveSchedule.length - 1);
+}
+
+async function generateSchedule() {
+    const day    = document.querySelector('#dayGroup .active-day')?.dataset.val || 'Monday';
+    const stress = document.querySelector('#stressGroup .active-level')?.dataset.val || 'Low Stress';
+    const prod   = document.querySelector('#prodGroup .active-level')?.dataset.val   || 'Medium Productivity';
+
+    document.getElementById('displayDay').innerText  = day;
+    document.getElementById('displayMode').innerText = `${stress} · ${prod}`;
+
+    const container = document.getElementById('timelineContainer');
+    document.getElementById('scheduleRows').innerHTML = `<div class="text-center py-5">
+        <div class="spinner-border" style="color:var(--accent);width:2rem;height:2rem;"></div>
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:10px;">Optimizing your schedule…</div>
+    </div>`;
+    container.classList.remove('d-none');
+    document.getElementById('timelinePlaceholder').classList.add('d-none');
+    document.getElementById('clearPlanBtn').style.display = '';
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating…';
+
+    try {
+        const res  = await fetch('/api/planner', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day, stress_level: stress, productivity: prod,
+                                   custom_activities: customActivities,
+                                   wake_time: document.getElementById('wakeTime').value,
+                                   sleep_time: document.getElementById('sleepTime').value })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            const customItems = customActivities.map(a => ({
+                time: `${a.time_start} – ${a.time_end}`,
+                activity: a.name, type: a.type, custom: true, locked: false
+            }));
+            liveSchedule = [...data.schedule, ...customItems]
+                .sort((a,b) => a.time.localeCompare(b.time))
+                .map(item => ({ ...item, locked: item.activity.startsWith('🎓') }));
+            renderSchedule();
+        } else {
+            document.getElementById('scheduleRows').innerHTML = `<div class="text-center py-4" style="color:var(--danger);"><i class="fas fa-circle-xmark mb-2" style="font-size:2rem;display:block;"></i>Error generating schedule.</div>`;
+        }
+    } catch(err) {
+        document.getElementById('scheduleRows').innerHTML = `<div class="text-center py-4" style="color:var(--danger);"><i class="fas fa-circle-xmark mb-2" style="font-size:2rem;display:block;"></i>Connection error.</div>`;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-calendar-plus me-2"></i>Generate Smart Schedule';
+}
+
+// ── Restore on page load ──────────────────────────────────────
+restoreState();
+</script>
+{% endblock %}

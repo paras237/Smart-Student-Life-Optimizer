@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Predictions — Smart Student Optimizer{% endblock %}
+{% block header %}AI Predictions Studio{% endblock %}
+{% block subheader %}Input your lifestyle metrics and get instant ML-powered academic forecasts{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- ── Input Panel ── -->
+    <div class="col-xl-5 fade-in-up delay-1">
+        <div class="card-glass p-4">
+            <div class="section-header mb-3">
+                <div>
+                    <div class="section-title">Student Profile Input</div>
+                    <div class="section-sub">All fields use daily averages</div>
+                </div>
+                <span class="pill blue"><i class="fas fa-robot me-1"></i>4 Models</span>
+            </div>
+            <form id="predictionForm">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label-custom">Study Hours / Day</label>
+                        <input type="number" class="form-control form-control-dark" id="study_hours" value="5" step="0.5" min="0" max="16">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-custom">Attendance %</label>
+                        <input type="number" class="form-control form-control-dark" id="attendance" value="80" min="0" max="100">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-custom">Sleep Hours</label>
+                        <input type="number" class="form-control form-control-dark" id="sleep_hours" value="7" step="0.5" min="0" max="12">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-custom">Screen Time (hrs)</label>
+                        <input type="number" class="form-control form-control-dark" id="screen_time" value="4" step="0.5" min="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-custom">Phone Usage (hrs)</label>
+                        <input type="number" class="form-control form-control-dark" id="phone_usage" value="3" step="0.5" min="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-custom">Social Media (hrs)</label>
+                        <input type="number" class="form-control form-control-dark" id="social_media" value="2" step="0.5" min="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-custom">Exercise (mins)</label>
+                        <input type="number" class="form-control form-control-dark" id="exercise_mins" value="30" step="5" min="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-custom">Gym (hrs/week)</label>
+                        <input type="number" class="form-control form-control-dark" id="gym_hours" value="2" step="0.5" min="0">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-custom">Breaks per Day</label>
+                        <input type="number" class="form-control form-control-dark" id="breaks" value="3" min="0" max="20">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary-custom w-100 mt-4" style="justify-content:center; font-size:0.9rem; padding:13px;">
+                    <i class="fas fa-magic"></i> Run AI Predictions
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Results Panel ── -->
+    <div class="col-xl-7 fade-in-up delay-2">
+        <!-- Result Cards -->
+        <div class="row g-3 mb-3" id="resultsGrid">
+            <div class="col-md-6">
+                <div class="stat-card red h-100">
+                    <div class="stat-icon red"><i class="fas fa-file-alt"></i></div>
+                    <div class="stat-label">Expected Marks</div>
+                    <div class="stat-value red" id="resMarks">--</div>
+                    <span class="stat-badge flat" id="resMarksGrade">Run prediction</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stat-card green h-100">
+                    <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-label">Overall Performance</div>
+                    <div class="stat-value green" id="resPerformance">--</div>
+                    <span class="stat-badge flat">Classification model</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stat-card yellow h-100">
+                    <div class="stat-icon yellow"><i class="fas fa-brain"></i></div>
+                    <div class="stat-label">Stress Level</div>
+                    <div class="stat-value yellow" id="resStress">--</div>
+                    <span class="stat-badge flat">Random Forest</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stat-card blue h-100">
+                    <div class="stat-icon blue"><i class="fas fa-bolt"></i></div>
+                    <div class="stat-label">Productivity</div>
+                    <div class="stat-value blue" id="resProductivity">--</div>
+                    <span class="stat-badge flat">Decision Tree</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Insight Box -->
+        <div class="card-glass p-4 fade-in-up delay-3">
+            <div class="section-header mb-3">
+                <div>
+                    <div class="section-title"><i class="fas fa-lightbulb text-warning me-2"></i>AI Insight</div>
+                    <div class="section-sub">Generated analysis after prediction</div>
+                </div>
+                <div id="insightLoader" class="d-none">
+                    <div class="spinner-border spinner-border-sm text-accent"></div>
+                </div>
+            </div>
+            <p id="resInsight" class="m-0 text-sub" style="line-height:1.8;">
+                Submit the form to receive a personalized AI-generated analysis of your academic metrics, stress level, and productivity forecast based on your inputs.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+const PREDICTION_KEY = 'smartStudent.latestPrediction';
+
+document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const loader = document.getElementById('insightLoader');
+    loader.classList.remove('d-none');
+    document.getElementById('resInsight').innerText = 'Analyzing your data through all 4 ML pipelines...';
+    
+    const payload = {
+        study_hours:   +document.getElementById('study_hours').value,
+        attendance:    +document.getElementById('attendance').value,
+        sleep_hours:   +document.getElementById('sleep_hours').value,
+        screen_time:   +document.getElementById('screen_time').value,
+        phone_usage:   +document.getElementById('phone_usage').value,
+        social_media:  +document.getElementById('social_media').value,
+        exercise_mins: +document.getElementById('exercise_mins').value,
+        gym_hours:     +document.getElementById('gym_hours').value,
+        breaks:        +document.getElementById('breaks').value,
+    };
+
+    try {
+        const res = await fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            localStorage.setItem(PREDICTION_KEY, JSON.stringify({
+                updatedAt: new Date().toISOString(),
+                input: payload,
+                result: data
+            }));
+
+            // Marks
+            document.getElementById('resMarks').innerText = data.marks + '%';
+            const grade = data.marks >= 85 ? 'Grade A' : data.marks >= 70 ? 'Grade B' : data.marks >= 55 ? 'Grade C' : 'Grade D';
+            document.getElementById('resMarksGrade').innerText = grade;
+            
+            // Performance
+            document.getElementById('resPerformance').innerText = data.performance;
+            
+            // Stress
+            const stressEl = document.getElementById('resStress');
+            stressEl.innerText = data.stress.replace(' Stress', '');
+            
+            // Productivity
+            const prodEl = document.getElementById('resProductivity');
+            prodEl.innerText = data.productivity.replace(' Productivity', '');
+            
+            // Build insight
+            const insights = [];
+            if (data.stress.includes('High'))     insights.push('Your stress indicators are elevated — prioritize sleep and take structured breaks.');
+            if (data.stress.includes('Moderate')) insights.push('Stress is manageable. Maintain your sleep schedule and reduce screen time slightly.');
+            if (data.productivity.includes('Low')) insights.push('Productivity is low. Try limiting phone usage to under 2 hours per day.');
+            if (data.productivity.includes('High')) insights.push('Excellent productivity! Keep your current study and exercise routine.');
+            if (data.marks < 60)  insights.push('Your predicted marks need attention — increase daily study hours by at least 1.5 hours.');
+            if (data.marks >= 80) insights.push('You are on track for an outstanding academic result. Stay consistent!');
+            if (payload.attendance < 75) insights.push('Warning: Attendance is below 75%. Attend all upcoming classes immediately.');
+            
+            document.getElementById('resInsight').innerText = insights.join(' ') || 'Your metrics look balanced! Keep maintaining these habits for consistent performance.';
+        } else {
+            document.getElementById('resInsight').innerText = 'Error: ' + (data.error || 'Prediction failed.');
+        }
+    } catch (err) {
+        document.getElementById('resInsight').innerText = 'Connection error. Make sure the server is running.';
+    } finally {
+        loader.classList.add('d-none');
+    }
+});
+</script>
+{% endblock %}

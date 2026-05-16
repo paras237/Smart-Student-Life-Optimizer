@@ -1,0 +1,31 @@
+day,time_start,time_end,subject_code,subject_name,subject_type,section,room,faculty
+Monday,12:00,12:50,E1PY203B,Data Structures,PP,E1PY203B-Section-8,GU_C-515,Singh Akhilesh Kumar
+Monday,13:45,14:35,E1PY213T,Artificial Intelligence Generative AI,PP,E1PY213T-Section-8,GU_C-414,Kumar Dr. Ankit
+Monday,14:35,15:25,E1PY210B,Machine Learning with Python,PP,E1PY210B-Section-8,GU_C-414,Sharma Dr. Sanjiv
+Monday,15:30,16:20,E1PY203B,Data Structures,PP,E1PY203B-Section-8,GU_C-414,Singh Akhilesh Kumar
+Monday,16:20,17:10,E1PY210B,Machine Learning with Python,PP,E1PY210B-Section-8,GU_C-414,Sharma Dr. Sanjiv
+Monday,17:10,18:00,E1PY201B,Object Oriented Programming with Java,PP,E1PY201B-Section-8,GU_C-414,Kumar Arun
+Tuesday,13:45,14:35,E1PY217T,Internet of Things,PP,MCA2-IoT6,GU_C-416,Sinha Kaushlendra Kumar
+Tuesday,14:35,15:25,01PA202L,Verbal and Quantitative Reasoning,PR,MCA2_SEC8_P2,GU_C-416,Raj Vishal
+Tuesday,15:30,16:20,01PA202L,Verbal and Quantitative Reasoning,PR,MCA2_SEC8_P2,GU_C-416,Raj Vishal
+Tuesday,16:20,17:10,E1PY210B,Machine Learning with Python,PR,MCA2_SEC8_P2,GU_C-407,Sharma Dr. Sanjiv
+Tuesday,17:10,18:00,E1PY210B,Machine Learning with Python,PR,MCA2_SEC8_P2,GU_C-407,Sharma Dr. Sanjiv
+Wednesday,10:15,11:05,E1PY203B,Data Structures,PR,MCA2_SEC8_P2,GU_C-408,Singh Akhilesh Kumar
+Wednesday,11:05,11:55,E1PY203B,Data Structures,PR,MCA2_SEC8_P2,GU_C-408,Singh Akhilesh Kumar
+Wednesday,13:45,14:35,E1PY217T,Internet of Things,PP,MCA2-IoT6,GU_C-416,Sinha Kaushlendra Kumar
+Wednesday,14:35,15:25,E1PY203B,Data Structures,PP,E1PY203B-Section-8,GU_C-416,Singh Akhilesh Kumar
+Wednesday,15:30,16:20,01PA202L,Verbal and Quantitative Reasoning,PR,MCA2_SEC8_P2,GU_C-416,Kumar Vipin
+Wednesday,16:20,17:10,01PA202L,Verbal and Quantitative Reasoning,PR,MCA2_SEC8_P2,GU_C-416,Kumar Vipin
+Wednesday,17:10,18:00,E1PY207T,Operating Systems,PP,E1PY207T-Section-8,GU_C-416,Tyagi Mohini
+Thursday,12:00,12:50,E1PY218L,Training-I,PR,MCA2_SEC8_P2,GU_C-513,Chourasiya Rajiv
+Thursday,13:45,14:35,E1PY217T,Internet of Things,PP,MCA2-IoT6,GU_C-416,Sinha Kaushlendra Kumar
+Thursday,14:35,15:25,E1PY213T,Artificial Intelligence Generative AI,PP,E1PY213T-Section-8,GU_C-416,Kumar Dr. Ankit
+Thursday,15:30,16:20,E1PY206T,Data Communication and Networking,PP,E1PY206T-Section-8,GU_C-416,Mishra Dr. Pawan
+Thursday,16:20,17:10,E1PY201B,Object Oriented Programming with Java,PR,MCA2_SEC8_P2,GU_C-407,Kumar Arun
+Thursday,17:10,18:00,E1PY201B,Object Oriented Programming with Java,PR,MCA2_SEC8_P2,GU_C-407,Kumar Arun
+Sunday,12:00,12:50,E1PY201B,Object Oriented Programming with Java,PP,E1PY201B-Section-8,GU_C-311,Kumar Arun
+Sunday,13:45,14:35,E1PY206T,Data Communication and Networking,PP,E1PY206T-Section-8,GU_C-414,Mishra Dr. Pawan
+Sunday,14:35,15:25,E1PY207T,Operating Systems,PP,E1PY207T-Section-8,GU_C-414,Tyagi Mohini
+Sunday,15:30,16:20,E1PY201B,Object Oriented Programming with Java,PP,E1PY201B-Section-8,GU_C-414,Kumar Arun
+Sunday,16:20,17:10,E1PY210B,Machine Learning with Python,PP,E1PY210B-Section-8,GU_C-414,Sharma Dr. Sanjiv
+Sunday,17:10,18:00,E1PY213T,Artificial Intelligence Generative AI,PP,E1PY213T-Section-8,GU_C-416,Kumar Dr. Ankit
